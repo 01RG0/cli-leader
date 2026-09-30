@@ -1,0 +1,22 @@
+name: "docker_compose_integration_test"
+version: "1.0"
+description: "Spawns an isolated Docker Compose test environment, runs tests, and unwinds services cleanly via Sagas."
+
+inputs:
+  compose_file: "docker-compose.test.yml"
+  test_command: "go test -tags=integration ./..."
+  timeout_seconds: 120
+
+steps:
+  - id: "start_containers"
+    action: "exec"
+    command: "docker compose -f ${compose_file} up -d --wait"
+    compensate: "docker compose -f ${compose_file} down -v"
+
+  - id: "run_tests"
+    action: "exec"
+    command: "${test_command}"
+
+  - id: "teardown"
+    action: "exec"
+    command: "docker compose -f ${compose_file} down -v"

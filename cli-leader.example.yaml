@@ -1,0 +1,105 @@
+# ==============================================================================
+# cli-leader Configuration Template
+# ==============================================================================
+version: "1.0"
+
+# ------------------------------------------------------------------------------
+# 1. Multi-Provider Gateway Settings
+# ------------------------------------------------------------------------------
+# The internal reverse proxy listening for Claude CLI / Anthropic SDK requests.
+gateway:
+  listen_addr: "127.0.0.1:8082"
+  default_provider: "openai" # Options: anthropic, openai, gemini, ollama
+  
+  providers:
+    # Anthropic direct upstream (passthrough)
+    anthropic:
+      base_url: "https://api.anthropic.com"
+      api_key_env: "ANTHROPIC_API_KEY"
+
+    # OpenAI / OpenRouter upstream
+    openai:
+      base_url: "https://api.openai.com/v1"
+      api_key_env: "OPENAI_API_KEY"
+      model_mapping:
+        "claude-3-7-sonnet-20250219": "o3-mini"
+        "claude-3-5-sonnet-20241022": "gpt-4o"
+        "claude-3-5-haiku-20241022": "gpt-4o-mini"
+
+    # Google Gemini upstream
+    gemini:
+      base_url: "https://generativelanguage.googleapis.com/v1beta/openai"
+      api_key_env: "GEMINI_API_KEY"
+      model_mapping:
+        "claude-3-7-sonnet-20250219": "gemini-2.5-pro"
+        "claude-3-5-sonnet-20241022": "gemini-2.5-flash"
+
+    # Local Ollama / vLLM / DeepSeek upstream
+    ollama:
+      base_url: "http://localhost:11434/v1"
+      model_mapping:
+        "claude-3-7-sonnet-20250219": "deepseek-r1:70b"
+        "claude-3-5-sonnet-20241022": "deepseek-r1:32b"
+        "claude-3-5-haiku-20241022": "qwen2.5-coder:14b"
+
+# ------------------------------------------------------------------------------
+# 2. Worker Swarm & Erlang OTP Supervision Policies
+# ------------------------------------------------------------------------------
+workers:
+  supervisor:
+    max_restarts: 3           # Max restarts allowed before escalating to Brain
+    period_seconds: 30        # Rate limit window in seconds
+    heartbeat_timeout_sec: 15 # Kill hung subprocess if no stdout in 15s
+
+  # Registered CLI Tools
+  aider:
+    binary: "aider"
+    flags: ["--no-auto-commits", "--yes-always"]
+    categories: ["refactoring", "code_edit"]
+
+  gemini:
+    binary: "gemini"
+    flags: ["--non-interactive"]
+    categories: ["indexing", "search"]
+
+  ollama:
+    binary: "ollama"
+    categories: ["test_generation", "boilerplate"]
+
+# ------------------------------------------------------------------------------
+# 3. Speculative Branch Racing & Merge Refinery
+# ------------------------------------------------------------------------------
+speculative:
+  enabled: true
+  max_parallel_candidates: 2 # Spawn up to 2 parallel candidate worktrees
+
+refinery:
+  test_command: "go test -v ./..."
+  mutation_testing: true     # Run synthetic AST mutation gate (cargo-mutants style)
+  squash_merges: true        # Squash-merge verified worktrees into active branch
+
+# ------------------------------------------------------------------------------
+# 4. Cognitive Memory, Tree-Sitter RepoMap & Rules
+# ------------------------------------------------------------------------------
+memory:
+  db_path: ".brain/memory.db"
+  conventions_dir: ".brain/conventions"
+  soul_file: ".brain/SOUL.md"
+  max_repo_map_tokens: 1024
+  max_injected_rule_tokens: 800
+  thompson_sampling: true     # Bayesian dynamic capability routing
+
+# ------------------------------------------------------------------------------
+# 5. Security Sandboxing
+# ------------------------------------------------------------------------------
+sandbox:
+  tier: "auto"                # Options: bwrap, landlock, none
+  allow_network: false        # Sandbox worker network isolation
+
+# ------------------------------------------------------------------------------
+# 6. Notifications & Webhooks (OpenClaw-style)
+# ------------------------------------------------------------------------------
+notifications:
+  slack_webhook: ""
+  discord_webhook: ""
+  telegram_chat_id: ""

@@ -1,0 +1,24 @@
+---
+description: Core Go coding standards, zero-CGO invariants, and process safety rules
+globs: 
+  - "**/*.go"
+alwaysApply: true
+---
+
+# Go Engineering Invariants
+
+1. **Zero-CGO Guarantee**:
+   - Never introduce dependencies requiring CGO or native C compilers.
+   - Use `modernc.org/sqlite` instead of `mattn/go-sqlite3`.
+   - Use pure-Go embedded vectors (`github.com/philippgille/chromem-go`).
+
+2. **Process Teardown Safety**:
+   - When launching CLI subprocesses, always set `SysProcAttr.Setsid = true` (or `Setpgid = true`) and `SysProcAttr.Pdeathsig = syscall.SIGTERM`.
+   - Always escalate shutdown: send `syscall.Kill(-pgid, syscall.SIGTERM)`, await grace period (3s), then `SIGKILL`.
+
+3. **High-Throughput TUI Buffering**:
+   - Never call `p.Send()` on every raw line of worker PTY output.
+   - Always buffer into `RingLogBuffer` and flush to Bubble Tea via the 30Hz ticker batcher.
+
+4. **Git Mutation Serialization**:
+   - Always guard `git worktree add`, `git worktree remove`, and branch creation with a `sync.Mutex` to prevent `.git/config.lock` collisions.
