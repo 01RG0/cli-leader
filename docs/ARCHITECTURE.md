@@ -2,11 +2,12 @@
 
 ## 1. Architectural Philosophy
 
-`cli-leader` is designed around the principle of **Hierarchical Cognitive Orchestration**:
+`cli-leader` is designed around the principle of **Hierarchical Cognitive Orchestration & Resilient Systems**:
 - High-level planning, architectural reasoning, and supervision are centralized into a single **Executive Brain** (Claude CLI).
 - Concrete code editing, terminal commands, unit test generation, and deep repository indexing are delegated to specialized **Worker CLIs**.
-- A **Central Cognitive Memory** links every worker to the Brain, turning ephemeral CLI executions into permanent, compounding institutional knowledge.
-- **Git is the Execution Engine**: All worker operations are isolated in ephemeral Git worktrees, verified through Fail-to-Pass (F2P) protocols, and merged via a serialized Refinery queue.
+- **Erlang/OTP Supervision & Temporal Durability**: Worker processes are supervised through OTP-style restart trees with fate-sharing boundaries. All workflow events are persisted to a SQLite WAL event log, enabling crash-proof resumption with zero token waste.
+- **Git is the Execution Engine, Sagas Protect the Host**: All code mutations occur in isolated Git worktrees, while non-git side effects (package installs, database migrations, Docker daemons) are tracked via a Saga compensation stack for automatic backward rollback.
+- **Objective Verification**: Natural language claims have zero weight. Code must pass Fail-to-Pass (F2P) verification, AST mutation gates (`cargo-mutants` style), and Byzantine quorum consensus before reaching the Bors-style Refinery merge queue.
 
 ---
 
@@ -18,27 +19,29 @@
 │                                                                        │
 │  ┌───────────────────────┐              ┌───────────────────────────┐  │
 │  │ Multi-Provider Router │              │   Model Context Protocol  │  │
-│  │  (Anthropic -> Any)   │              │        MCP Server         │  │
+│  │  (Anthropic -> Any)   │              │   & Agent Client Protocol │  │
 │  └──────────▲────────────┘              └─────────────▲─────────────┘  │
 │             │ HTTP                                    │ JSON-RPC       │
 │  ┌──────────▼────────────┐              ┌─────────────▼─────────────┐  │
 │  │ Claude CLI (The Brain)│◄────────────►│ Dual-Ledger State Machine │  │
-│  └───────────────────────┘              │  (Task & Progress Ledger) │  │
+│  └───────────────────────┘              │ (Temporal Durable Replay) │  │
 │                                         └─────────────┬─────────────┘  │
-│                                                       │ Goroutines     │
+│                                                       │ OTP Trees      │
 │  ┌──────────────────────────────────────────────┐     │                │
 │  │ Ever-Learning Cognitive Bank                 │◄────┤                │
-│  │ - Episodic Task Ledger (SQLite)              │     ▼                │
-│  │ - Reflexion Verbal Learning Engine           │ ┌──────────────────┐ │
-│  │ - Dynamic Scoped Rules (.cursor/rules/*.mdc) │ │ Worker Subprocess│ │
-│  │ - Pure-Go Vector Memory (chromem-go)         │ │ Engine (PTY +    │ │
-│  │ - Thompson Sampling Capability Matrix        │ │ Pdeathsig)       │ │
+│  │ - SQLite Episodic Ledger (WAL)               │     ▼                │
+│  │ - Tree-Sitter PageRank Repo Map              │ ┌──────────────────┐ │
+│  │ - Dynamic Scoped Rules (.cursor/rules/*.mdc) │ │ OTP Supervisor   │ │
+│  │ - Hermes Self-Evolving Skills & SOUL.md      │ │ (one_for_one /   │ │
+│  │ - Two-Stage Thompson Sampling Matrix         │ │  one_for_all)    │ │
 │  └──────────────────────────────────────────────┘ └────────┬─────────┘ │
 │                                                            │           │
 │  ┌─────────────────────────────────────────────────────────▼────────┐  │
-│  │ Speculative Execution & Refinery Merge Queue                     │  │
+│  │ Speculative Execution, Sagas & Refinery Merge Queue              │  │
 │  │ - Isolated Git Worktrees (Branch Racing)                         │  │
-│  │ - Fail-to-Pass (F2P) Automated TDD Verification                  │  │
+│  │ - Saga Coordinator (Non-Git Side-Effect Rollbacks)               │  │
+│  │ - Fail-to-Pass (F2P) & Mutation Testing Gate                     │  │
+│  │ - Byzantine Quorum Consensus (Machine Proof Receipts)            │  │
 │  │ - Serialized Bors-Style Refinery Merge Queue                     │  │
 │  └──────────────────────────────────────────────────────────────────┘  │
 └────────────────────────────────────────────────────────────────────────┘
@@ -46,29 +49,22 @@
 
 ---
 
-## 3. The 6 Core Subsystems
+## 3. The 7 Core Subsystems
 
-### Subsystem 1: The Executive Brain & Dual-Ledger State Machine
-Claude CLI operates as an agentic supervisor connecting to `cli-leader`'s built-in **MCP (Model Context Protocol)** server over stdio or local SSE.
+### Subsystem 1: The Executive Brain, MCP & Agent Client Protocol (ACP)
+Claude CLI operates as an agentic supervisor connecting to `cli-leader`'s built-in **MCP (Model Context Protocol)** server over stdio or local SSE. Furthermore, `cli-leader` implements the **Agent Client Protocol (ACP)**—co-authored by Zed Industries and JetBrains—allowing the daemon to plug directly into modern IDEs.
 
-To prevent infinite loops and context contamination, `cli-leader` enforces the **Dual-Ledger Pattern**:
-1. **Task Ledger (`tasks`)**: Immutable record of the user's high-level goal, architectural constraints, and acceptance criteria.
-2. **Progress Ledger (`task_steps`)**: Dynamic state machine tracking sub-step statuses (`pending`, `running`, `reviewing`, `completed`, `failed`), assigned worker CLIs, and retry counts.
-
-#### Loop & Thrashing Prevention:
-- **Cryptographic State Hashing**: Hashes `(tool_name, tool_arguments)` and `(git diff hash)`. If a worker repeats identical tool invocations or generates 0-byte diffs twice, `cli-leader` aborts the subtask and injects a loop-break warning: *"Action produced no state change. Re-evaluate approach."*
-- **Stall Counters**: If 3 consecutive turns yield no progress against the acceptance criteria, the subtask is terminated, the worktree is wiped, and the Brain triggers an architectural re-plan.
-- **Context Isolation**: Workers **never inherit raw conversational transcripts**. The Brain passes a concise, typed context packet (goal, file globs, AST signatures, negative rules) and receives an unambiguous `git diff` in return.
-
-#### MCP Tool Catalog Exposed to Claude CLI:
-1. `dispatch_worker(cli_name, task_prompt, target_files, flags)`: Starts an isolated worker CLI task; returns asynchronous `task_id`.
-2. `dispatch_speculative(prompt, candidates[], target_files)`: Spawns parallel candidate workers in separate worktrees ("Branch Racing").
-3. `get_task_status(task_id)`: Streams progress, stdout ring buffer lines, and resource usage.
-4. `inspect_diff(task_id)`: Returns the unified `git diff` produced in the worker's isolated worktree.
-5. `verify_f2p(task_id, reproduction_test_cmd)`: Runs Fail-to-Pass test assertions.
-6. `refinery_enqueue(task_id, commit_message)`: Enqueues a verified worktree into the Bors-style merge queue.
-7. `query_brain_memory(query, category)`: Hybrid vector + lexical search across project rules and past post-mortems.
-8. `record_learning(lesson_type, rule_directive, globs)`: Commits a newly synthesized `.mdc` rule.
+To prevent infinite loops and context contamination, `cli-leader` enforces:
+1. **Dual-Ledger Pattern**:
+   - **Task Ledger (`tasks`)**: Immutable record of the user's high-level goal, architectural constraints, and acceptance criteria.
+   - **Progress Ledger (`task_steps`)**: Dynamic state machine tracking sub-step statuses (`pending`, `running`, `reviewing`, `completed`, `failed`).
+2. **Temporal-Grade Durable Replay**:
+   - All state transitions and tool outputs are recorded in an append-only SQLite WAL table (`workflow_events`).
+   - If the daemon crashes, the host reboots, or network drops occur, `cli-leader` replays the workflow state deterministically: completed tool activities return instantly from the replay cache with **zero duplicate LLM tokens spent**.
+3. **Loop & Stall Prevention**:
+   - Cryptographic state hashing (`SHA256(tool + args + diff)`) and progress stall counters break circular repair thrashing after 3 iterations.
+4. **Boomerang Subtasks**:
+   - Sub-workers never inherit Claude Brain's full conversation transcript. They execute in fresh context and return typed **Boomerang Result Packets** (<250 tokens: diff stats, rationale, verification exit codes).
 
 ---
 
@@ -76,124 +72,145 @@ To prevent infinite loops and context contamination, `cli-leader` enforces the *
 Claude CLI natively expects the Anthropic `/v1/messages` endpoint. `cli-leader` embeds an ultra-low-latency HTTP proxy in Go listening on `localhost:8082`.
 
 #### Key Protocol Translation Mechanics:
-1. **SSE Streaming State Machine**:
-   - Anthropic mandates explicit lifecycle events (`message_start` $\to$ `content_block_start` $\to$ multiple `content_block_delta` $\to$ `content_block_stop` $\to$ `message_delta` $\to$ `message_stop`).
-   - The Go gateway tracks active block types (`thinking`, `text`, `tool_use`) and indexes, converting loose OpenAI streaming chunks into strictly framed Anthropic SSE envelopes.
-2. **DeepSeek-R1 & Reasoning Translation**:
-   - Maps upstream `reasoning_content` to Anthropic `thinking` blocks (`thinking_delta`).
-   - Retains reasoning blocks in multi-turn request replay (required by DeepSeek-R1).
-3. **Tool Calling & Multi-Turn Asymmetry**:
-   - Anthropic sends tool results within a `user` message as `tool_result` content blocks. OpenAI strictly requires `role: "tool"` with matching `tool_call_id`.
-   - The gateway decomposes mixed user messages (text + tool results) into distinct `tool` messages followed by a trailing `user` message.
-   - Translates tool definitions between Anthropic `input_schema` and OpenAI/Gemini `parameters`. Sanitizes tool names for Gemini regex (`^[a-zA-Z_][a-zA-Z0-9_]*$`).
-4. **Mandatory Token Counting Endpoint**:
-   - Serves `POST /v1/messages/count_tokens` locally using pure-Go BPE tokenization (`tiktoken-go`), preventing Claude CLI from aborting on pre-flight checks.
-5. **Zero-Allocation JSON Parsing**:
-   - Uses `github.com/tidwall/gjson` and `sjson` to strip unsupported fields (e.g. `cache_control`) and mutate payloads without expensive struct reflections.
+1. **Zero-Allocation SSE Streaming Engine**:
+   - Translates upstream OpenAI chunk deltas into framed Anthropic SSE envelopes (`content_block_start` $\to$ `content_block_delta` $\to$ `content_block_stop` $\to$ `message_stop`).
+   - Uses `github.com/tidwall/gjson` and `sjson` directly on raw byte slices, achieving **<100 µs TTFT overhead** without reflection allocations.
+2. **Reasoning Block Preservation**:
+   - Bidirectionally maps DeepSeek-R1 `reasoning_content` to Anthropic `thinking` blocks (`thinking_delta`).
+   - Retains reasoning blocks and cryptographic signatures during multi-turn replay.
+3. **Tool Calling & Multi-Turn Role Decomposition**:
+   - Decomposes mixed Anthropic user turns (text + tool results) into distinct `tool` messages followed by a trailing `user` message for OpenAI compatibility.
+   - Converts tool schemas (`input_schema` $\to$ `parameters`) and sanitizes tool names for Gemini (`^[a-zA-Z_][a-zA-Z0-9_]*$`).
+4. **Mandatory Local Token Counting**:
+   - Serves `POST /v1/messages/count_tokens` locally via pure-Go `tiktoken-go` (BPE tokenizer), eliminating pre-flight latency.
 
 ---
 
-### Subsystem 3: Worker Process Engine & PTY Supervision
+### Subsystem 3: Worker Process Engine & Erlang OTP Supervision Trees
 Worker CLIs often assume an interactive terminal (requiring ANSI colors, VT100 escapes, or user confirmation prompts like `[y/N]`).
 
-#### Go Implementation Details:
-* **PTY Virtualization**: Uses `creack/pty.StartWithSize` (30 rows, 120 cols) to allocate pseudo-terminals (`/dev/pts/*`), satisfying `isatty(3)` checks across all tools.
-* **Process Group Isolation & Teardown**:
-  - Sets `cmd.SysProcAttr.Setsid = true` (or `Setpgid = true`), making the worker the leader of its own process group.
-  - Sets `SysProcAttr.Pdeathsig = syscall.SIGTERM` so the Linux kernel automatically terminates child processes if `cli-leader` exits unexpectedly.
-  - Escalates teardown: sends `syscall.Kill(-pgid, syscall.SIGTERM)`, waits 3 seconds, and forces `syscall.Kill(-pgid, syscall.SIGKILL)`.
-* **Automated Prompt Responders**:
-  - Implements a non-blocking sliding-window regex interceptor over the PTY stream to detect interactive confirmation prompts (e.g. `[y/N]`, `Apply changes?`) and automatically reply with `y\n`.
+#### OTP Supervision Topology:
+* **"Let It Crash" Philosophy**: Never attempt defensive recovery from corrupted worker states. Fail fast and reset the worker worktree to a clean commit SHA.
+* **Supervision Topologies**:
+  - `one_for_one`: Isolated candidate workers in Branch Racing. If Worker A segfaults, Worker B continues unaffected.
+  - `one_for_all`: Compound worker bundles (PTY Master + Subprocess + Auto-Reply Interceptor + Ring Buffer). If the CLI dies, the entire bundle terminates cleanly without zombie goroutines.
+  - `rest_for_one`: Linear dependency pipelines (Worktree Setup $\to$ F2P Baseline Test $\to$ Worker CLI $\to$ Adversarial Audit).
+* **Restart Intensity Escalation**:
+  - If a worker crashes more than $M$ times in $T$ seconds (e.g., 3 crashes in 30s), the supervisor crashes itself and escalates an `escalated_failure` event to Claude Brain for re-planning.
+* **PTY & Process Group Teardown**:
+  - Uses `creack/pty.StartWithSize` with `Setsid: true` and Linux `Pdeathsig = syscall.SIGTERM`.
+  - Escalates teardown: `SIGTERM` on `-pgid`, 3-second grace period, `SIGKILL` on `-pgid`.
 * **High-Throughput 60 FPS TUI Decoupling**:
-  - PTY output is appended to a thread-safe circular ring buffer (`RingLogBuffer`).
-  - A 30Hz ticker batcher drains accumulated lines into a single `LogBatchMsg` for Bubble Tea, eliminating UI freezing during high-output commands.
+  - PTY output is captured in a circular ring buffer (`RingLogBuffer`) and flushed to Bubble Tea via a **30Hz ticker batcher**, preventing UI lockup during high-throughput logs.
 
 ---
 
-### Subsystem 4: Speculative Execution, F2P Verification & Refinery Queue
-
+### Subsystem 4: Speculative Branch Racing & Saga Coordinator
 ```mermaid
 sequenceDiagram
     autonumber
     participant Brain as Claude Brain
     participant Orch as cli-leader Engine
+    participant Saga as Saga Coordinator
     participant WT as Git Worktree Sandbox
-    participant F2P as Fail-to-Pass Engine
-    participant Refinery as Bors-Style Refinery Queue
-    participant Git as Main Git Branch
+    participant F2P as F2P & Mutation Gate
+    participant Quorum as Byzantine Quorum
+    participant Refinery as Bors Merge Queue
 
     Brain->>Orch: dispatch_speculative(prompt, [Aider, DeepSeek])
     Orch->>WT: Create worktree A & worktree B
-    Orch->>F2P: Run reproduction test on unmodified HEAD (asserts FAIL)
-    par Candidate A
-        Orch->>WT: Run Worker A (Aider) in worktree A
-    and Candidate B
-        Orch->>WT: Run Worker B (DeepSeek) in worktree B
+    par Candidate A (Aider)
+        Orch->>WT: Run Aider in worktree A
+        Orch->>Saga: Register non-git actions (npm install, docker)
+    and Candidate B (DeepSeek)
+        Orch->>WT: Run DeepSeek in worktree B
+        Orch->>Saga: Register non-git actions
     end
-    Orch->>F2P: Verify reproduction test passes & regression suite passes
-    Orch->>Refinery: Enqueue winning worktree branch
-    Refinery->>Git: Rebase on latest HEAD, re-run test suite, squash-merge
+    Orch->>F2P: Verify F2P test & run Mutation Testing Gate
+    Orch->>Quorum: Collect Thompson-weighted agent votes
+    Quorum->>Refinery: Enqueue winning candidate
+    Orch->>Saga: Execute backward compensation for losing candidate
+    Refinery->>Refinery: Rebase on HEAD, re-run CI suite, squash-merge
 ```
 
 1. **Speculative Multi-Worktree Execution ("Branch Racing")**:
-   - For challenging tasks, `cli-leader` spawns multiple worker CLIs concurrently in separate worktrees (`.brain/worktrees/<task-id>-a` and `<task-id>-b`).
-   - Both run verification; the patch with the lowest diff complexity and cleanest test run is selected.
-2. **Fail-to-Pass (F2P) Protocol**:
-   - Before editing code, a reproduction test is executed. It **MUST FAIL** on unmodified code (ruling out false positives).
-   - After the fix is applied, the reproduction test **MUST PASS**.
-   - The full existing test suite (`go test ./...` or `npm test`) **MUST PASS** (ruling out regressions).
+   - Concurrently spawns multiple workers in separate worktrees (`.brain/worktrees/<task-id>-a` and `<task-id>-b`).
+   - Automatically selects the winning patch based on test results and diff complexity.
+2. **Saga Coordinator for Non-Git Side Effects**:
+   - Maintains a LIFO compensation stack for non-git mutations (`npm install`, database migrations, Docker containers, cloud resources).
+   - If a speculative candidate loses or an operation fails, the Saga coordinator executes compensating actions in reverse order ($C_n \to C_1$), restoring the host to a pristine state.
 3. **Bors-Style Refinery Merge Queue**:
-   - Eliminates merge races when multiple workers complete concurrently.
    - Completed worktrees are queued into the Refinery. The Refinery checks out a temporary staging branch from latest `HEAD`, applies the squashed diff, runs CI tests, and merges only upon zero exit codes.
 
 ---
 
-### Subsystem 5: Ever-Learning Cognitive Memory Bank
+### Subsystem 5: Fail-to-Pass (F2P), Mutation Testing & Byzantine Quorum
+
+1. **Fail-to-Pass (F2P) Protocol**:
+   - Step 1: Reproduction test is generated and executed on unmodified HEAD; it **MUST FAIL** (ruling out false positives).
+   - Step 2: Fix is implemented in worktree.
+   - Step 3: Reproduction test **MUST PASS**; full regression suite **MUST PASS**.
+2. **Mutation Testing Verification Gate (`cargo-mutants` style)**:
+   - Injects synthetic AST defects into the modified code (inverting booleans, substituting default return values, removing statements).
+   - **Killed Mutant**: Test suite fails (proves the test actually checks logic).
+   - **Survived Mutant**: Test suite passes despite mutated code (detects hollow/tautological assertions).
+   - Survived mutants trigger automated follow-up test synthesis.
+3. **Byzantine Quorum Consensus**:
+   - Zero trust for unverified claims. Approvals require verifiable machine proof receipts:
+     * Subprocess exit code `0`.
+     * Git diff hash matching proposed commit.
+     * F2P test receipts showing pre-failure and post-pass.
+     * Static analysis zero-error output.
+   - Reviewer votes are weighted by their historical Bayesian score: $\mathbb{E}[\text{Beta}(\alpha, \beta)]$.
+
+---
+
+### Subsystem 6: Ever-Learning Cognitive Memory Bank
 
 ```mermaid
 graph LR
     subgraph CognitiveBank [Ever-Learning Cognitive Bank]
-        Episodic[1. Episodic Ledger\nSQLite Tasks & Diffs]
-        Reflexion[2. Reflexion Engine\nVerbal Reinforcement]
-        Rules[3. Scoped Rules\n.cursor/rules/*.mdc]
-        Vectors[4. Pure-Go Vector Store\nchromem-go Embeddings]
-        Matrix[5. Dynamic Capability Matrix\nThompson Sampling Beta Dist]
+        Episodic[1. Episodic WAL Ledger\nTasks, Diffs, Replay Cache]
+        RepoMap[2. Tree-Sitter Repo Map\nPersonalized PageRank]
+        Reflexion[3. Reflexion Engine\nVerbal Reinforcement]
+        Rules[4. Scoped Rules\n.cursor/rules/*.mdc]
+        Skills[5. Hermes Evolving Skills\n.brain/skills/*.yaml]
+        Vectors[6. Pure-Go Vector Store\nchromem-go Embeddings]
+        Matrix[7. Two-Stage Router\nCentroids + Thompson Sampling]
     end
 
-    WorkerFailure[Test / Compiler Failure] --> Reflexion
+    Failure[Test / Mutation Failure] --> Reflexion
     Reflexion -->|Extract Rule [WHEN-DO-BECAUSE]| Rules
     Rules -->|Embed Directive| Vectors
-    WorkerSuccess[Verified Task Merge] --> Episodic
-    WorkerSuccess -->|Increment Alpha (+1)| Matrix
-    WorkerFailure -->|Increment Beta (+1)| Matrix
+    Success[Novel Multi-Step Workflow] --> Skills
+    TaskPrompt[Incoming Task Prompt] --> RepoMap
+    TaskPrompt --> Matrix
 ```
 
-1. **Episodic Ledger (`modernc.org/sqlite`)**:
-   - Zero-CGO pure Go database tracking full task metadata, git diff hashes, execution durations, token costs, and exit codes.
-2. **Reflexion Verbal Reinforcement Loop**:
-   - Converts binary failures into actionable natural language directives:
-     * *Failure Trace*: `panic: runtime error: invalid memory address in gateway/proxy.go:84`
-     * *Verbal Directive*: `"When forwarding Anthropic SSE delta events, ensure the response body writer is not nil before flushing chunks."`
-3. **Scoped Dynamic Rules (`.cursor/rules/*.mdc`)**:
-   - Rules follow the modern Cursor `.mdc` format with YAML frontmatter (`globs`, `description`, `alwaysApply`).
-   - Injected dynamically into worker prompts based on file glob matches and semantic relevance, capped strictly at **<800 tokens** using pure-Go BPE token counting (`tiktoken-go`).
-4. **Pure-Go In-Memory Vector Search (`chromem-go`)**:
-   - Zero-CGO embedded vector store capable of searching 20,000 vectors in <2ms on a single CPU.
-   - Implements Reciprocal Rank Fusion (RRF) merging exact lexical matches (SQLite FTS5) with semantic vector similarity.
-5. **Thompson Sampling Capability Matrix**:
-   - Tracks success/failure distributions using Bayesian Beta distributions:
-     $$\theta_{w,c} \sim \text{Beta}(\alpha_{w,c}, \beta_{w,c})$$
-   - Dynamically samples scores to balance **exploration** of newly installed local models (Ollama, DeepSeek) with **exploitation** of proven frontier models (Claude 3.7, o3-mini).
+1. **Episodic WAL Ledger (`modernc.org/sqlite`)**:
+   - Zero-CGO pure Go database tracking full task metadata, git diff hashes, execution durations, token costs, and durable replay events.
+2. **Tree-Sitter PageRank Repo Map**:
+   - Extracts definition and reference tags using Tree-Sitter Go bindings (`smacker/go-tree-sitter`).
+   - Runs Personalized PageRank over the symbol graph, outputting an ultra-dense, token-budgeted (<1024 tokens) codebase structural map to Claude Brain.
+3. **Reflexion Verbal Reinforcement Loop**:
+   - Converts binary errors into actionable natural language directives:
+     * *Failure*: `panic: runtime error: invalid memory address in gateway/proxy.go:84`
+     * *Directive*: `"When forwarding Anthropic SSE delta events, ensure the response body writer is not nil before flushing chunks."`
+4. **Scoped Dynamic Rules (`.cursor/rules/*.mdc`)**:
+   - Follows the Cursor `.mdc` format with YAML frontmatter (`globs`, `description`, `alwaysApply`). Injected dynamically into worker prompts based on file glob matches, capped strictly at **<800 tokens**.
+5. **Hermes Self-Evolving Skills (`.brain/skills/*.yaml`)**:
+   - When a worker CLI executes a successful novel multi-step workflow (e.g. custom Docker compose setup or migration), `cli-leader` codifies it into a reusable executable skill macro.
+6. **OpenClaw `SOUL.md` & Webhook Channels**:
+   - Defines the Brain's behavioral identity, risk tolerance, and principles in a human-readable `.brain/SOUL.md`.
+   - Dispatches async notifications to Slack, Discord, or Telegram when long-running branch races finish or require human approval.
+7. **Two-Stage Routing Engine**:
+   - *Stage 1*: Sub-5ms semantic centroid vector routing (`chromem-go`) classifying task category.
+   - *Stage 2*: Bayesian Thompson Sampling $\text{Beta}(\alpha, \beta)$ selecting the optimal worker CLI.
 
 ---
 
-### Subsystem 6: Tiered Workspace Sandboxing
-To ensure security without introducing heavy container dependencies:
+### Subsystem 7: Tiered Workspace Sandboxing
 1. **Tier 1 (Preferred): Bubblewrap (`bwrap`)**:
-   - Unprivileged Linux namespace isolation.
-   - Mounts root filesystem `/` strictly Read-Only (`--ro-bind / /`).
-   - Mounts only the worker's assigned worktree as Read-Write (`--bind <worktree> <worktree>`).
-   - Provides ephemeral in-RAM `/tmp` (`--tmpfs /tmp`) and isolates PID and network namespaces.
+   - Unprivileged Linux namespace isolation (`--ro-bind / /`, `--bind <worktree> <worktree>`, `--tmpfs /tmp`, `--unshare-pid`, `--unshare-net`).
 2. **Tier 2 (Zero-Dependency Fallback): Linux Landlock LSM**:
-   - Employs a self-re-exec trampoline (`cli-leader __sandbox_exec`) using `github.com/landlock-lsm/go-landlock`.
-   - The child process applies irreversible Landlock path restrictions (<1ms overhead) and drops privileges before executing the worker CLI via `syscall.Exec`.
+   - Self-re-exec trampoline (`cli-leader __sandbox_exec`) applying irreversible Landlock path rules with <1ms overhead.
