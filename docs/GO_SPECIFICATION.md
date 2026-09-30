@@ -2,7 +2,7 @@
 
 This document provides the canonical Go package layout, concrete types, interfaces, method signatures, concurrency semantics, and error handling contracts for `github.com/01RG0/cli-leader`.
 
-> **Documentation Contract**: All specifications adhere strictly to [CONTRACT.md](file:///home/rootuser/wt-go-specification/docs/_review/CONTRACT.md). System design, control flows, and architectural narratives are maintained in [ARCHITECTURE.md](file:///home/rootuser/wt-go-specification/docs/ARCHITECTURE.md), delivery milestones in [ROADMAP.md](file:///home/rootuser/wt-go-specification/docs/ROADMAP.md), and ecosystem research in [ECOSYSTEM_INNOVATIONS.md](file:///home/rootuser/wt-go-specification/docs/ECOSYSTEM_INNOVATIONS.md).
+> **Documentation Contract**: All specifications adhere strictly to [CONTRACT.md](_review/CONTRACT.md). System design, control flows, and architectural narratives are maintained in [ARCHITECTURE.md](ARCHITECTURE.md), delivery milestones in [ROADMAP.md](ROADMAP.md), and ecosystem research in [ECOSYSTEM_INNOVATIONS.md](ECOSYSTEM_INNOVATIONS.md).
 
 ---
 

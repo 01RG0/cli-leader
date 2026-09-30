@@ -1,12 +1,12 @@
 # Cross-Language Ecosystem Innovations & Research Survey
 
-> **Owner**: [`docs/ECOSYSTEM_INNOVATIONS.md`](file:///home/rootuser/wt-ecosystem-innovations/docs/ECOSYSTEM_INNOVATIONS.md)  
+> **Owner**: [`docs/ECOSYSTEM_INNOVATIONS.md`](ECOSYSTEM_INNOVATIONS.md)  
 > **Scope**: Comparative analysis, surveys of external projects (Aider, Claude Code, OpenHands, Hermes Agent, LiteLLM, RouteLLM, Zellij, etc.), theoretical inspirations, and algorithmic notes.  
 > **Related Documents**:
-> - System Design & Subsystems: [`docs/ARCHITECTURE.md`](file:///home/rootuser/wt-ecosystem-innovations/docs/ARCHITECTURE.md)
-> - Technical Specification & Go Packages: [`docs/GO_SPECIFICATION.md`](file:///home/rootuser/wt-ecosystem-innovations/docs/GO_SPECIFICATION.md)
-> - Delivery Phases & Milestones: [`docs/ROADMAP.md`](file:///home/rootuser/wt-ecosystem-innovations/docs/ROADMAP.md)
-> - Project Vision & Overview: [`README.md`](file:///home/rootuser/wt-ecosystem-innovations/README.md)
+> - System Design & Subsystems: [`docs/ARCHITECTURE.md`](ARCHITECTURE.md)
+> - Technical Specification & Go Packages: [`docs/GO_SPECIFICATION.md`](GO_SPECIFICATION.md)
+> - Delivery Phases & Milestones: [`docs/ROADMAP.md`](ROADMAP.md)
+> - Project Vision & Overview: [`README.md`](../README.md)
 
 ---
 
@@ -42,8 +42,8 @@ Aider is a terminal-based autonomous pair-programming assistant that interacts d
 - Delegating deep codebase edits to a specialized tool with fine-grained AST knowledge avoids polluting the executive supervisor's context.
 
 #### 3. Proposed `cli-leader` Adaptation `[Planned]`
-- Implement an in-memory **Tree-Sitter RepoMap** engine within [`internal/memory`](file:///home/rootuser/wt-ecosystem-innovations/docs/GO_SPECIFICATION.md#internalmemory) that builds symbol dependency graphs and executes Personalized PageRank to inject codebase maps into Claude Brain's prompt context.
-- Provide a dedicated worker adapter in [`internal/worker/adapters/aider.go`](file:///home/rootuser/wt-ecosystem-innovations/docs/GO_SPECIFICATION.md#internalworkeradapters) to dispatch targeted AST refactorings to Aider within isolated Git worktrees.
+- Implement an in-memory **Tree-Sitter RepoMap** engine within [`internal/memory`](GO_SPECIFICATION.md#internalmemory) that builds symbol dependency graphs and executes Personalized PageRank to inject codebase maps into Claude Brain's prompt context.
+- Provide a dedicated worker adapter in [`internal/worker/adapters/aider.go`](GO_SPECIFICATION.md#internalworkeradapters) to dispatch targeted AST refactorings to Aider within isolated Git worktrees.
 - *Open Questions*:
   - `TODO(verify): Tree-Sitter CGO vs pure-Go bindings for multi-language AST parsing`
   - `TODO(verify): dynamic vs fixed token budgeting formula for RepoMap injection`
@@ -68,8 +68,8 @@ Claude Code is Anthropic's official agentic command-line interface. Its architec
 
 #### 3. Proposed `cli-leader` Adaptation `[v0.1 Core]`
 - Establish Claude CLI as the canonical **Brain** of `cli-leader`.
-- Build the **Multi-Provider Gateway** in [`internal/gateway`](file:///home/rootuser/wt-ecosystem-innovations/docs/GO_SPECIFICATION.md#internalgateway) listening on `:8082` to reverse-proxy Claude CLI's Anthropic Messages API requests to upstream providers (OpenAI, Gemini, Ollama, DeepSeek).
-- Build a PTY regex auto-reply engine in [`internal/worker`](file:///home/rootuser/wt-ecosystem-innovations/docs/GO_SPECIFICATION.md#internalworker) to intercept confirmation prompts (`[y/N]`, `Apply changes?`) and prevent subprocess deadlocks.
+- Build the **Multi-Provider Gateway** in [`internal/gateway`](GO_SPECIFICATION.md#internalgateway) listening on `:8082` to reverse-proxy Claude CLI's Anthropic Messages API requests to upstream providers (OpenAI, Gemini, Ollama, DeepSeek).
+- Build a PTY regex auto-reply engine in [`internal/worker`](GO_SPECIFICATION.md#internalworker) to intercept confirmation prompts (`[y/N]`, `Apply changes?`) and prevent subprocess deadlocks.
 
 ---
 
@@ -88,8 +88,8 @@ OpenHands is an open-source autonomous agent platform designed for software deve
 - Host isolation is critical: running multi-agent swarms with broad terminal access requires containerized sandboxing or kernel-level filesystem isolation.
 
 #### 3. Proposed `cli-leader` Adaptation `[Planned]`
-- Implement the **Dual-Ledger State Machine** in [`internal/state`](file:///home/rootuser/wt-ecosystem-innovations/docs/GO_SPECIFICATION.md#internalstate), segregating high-level user invariants (`TaskLedger`) from granular step actions and observations (`ProgressLedger`).
-- Implement tiered security sandboxing in [`internal/sandbox`](file:///home/rootuser/wt-ecosystem-innovations/docs/GO_SPECIFICATION.md#internalsandbox) using Linux Bubblewrap (`bwrap`) with fallback to Linux Landlock LSM (`go-landlock`).
+- Implement the **Dual-Ledger State Machine** in [`internal/state`](GO_SPECIFICATION.md#internalstate), segregating high-level user invariants (`TaskLedger`) from granular step actions and observations (`ProgressLedger`).
+- Implement tiered security sandboxing in [`internal/sandbox`](GO_SPECIFICATION.md#internalsandbox) using Linux Bubblewrap (`bwrap`) with fallback to Linux Landlock LSM (`go-landlock`).
 - *Open Questions*:
   - `TODO(verify): compatibility layer for OpenHands micro-agent Action/Observation event schemas`
 
@@ -110,7 +110,7 @@ Hermes Agent is an autonomous agent framework built by NousResearch that emphasi
 - Persisting learned workflows as declarative skill files enables compounding capability growth across long-running projects.
 
 #### 3. Proposed `cli-leader` Adaptation `[Planned]`
-- Implement the **Self-Evolving Skills** engine in [`internal/memory`](file:///home/rootuser/wt-ecosystem-innovations/docs/GO_SPECIFICATION.md#internalmemory), storing dynamically generated worker skills in `.brain/skills/*.yaml`.
+- Implement the **Self-Evolving Skills** engine in [`internal/memory`](GO_SPECIFICATION.md#internalmemory), storing dynamically generated worker skills in `.brain/skills/*.yaml`.
 - Expose an MCP tool `synthesize_skill` allowing Claude Brain to compile novel reusable execution workflows and dynamically register them into the swarm runtime.
 
 ---
@@ -130,7 +130,7 @@ SWE-agent introduces the **Agent-Computer Interface (ACI)**, optimizing how soft
 - The interface between the orchestrator and worker CLIs must actively prune, summarize, and paginate stdout/stderr streams.
 
 #### 3. Proposed `cli-leader` Adaptation `[Planned]`
-- Implement a thread-safe circular ring buffer (`RingLogBuffer`) in [`internal/worker`](file:///home/rootuser/wt-ecosystem-innovations/docs/GO_SPECIFICATION.md#internalworker) that decouples raw PTY streams, paginates output, and prevents context flooding.
+- Implement a thread-safe circular ring buffer (`RingLogBuffer`) in [`internal/worker`](GO_SPECIFICATION.md#internalworker) that decouples raw PTY streams, paginates output, and prevents context flooding.
 - Enforce strict token and line limits on tool outputs returned to Claude Brain via MCP responses.
 
 ---
@@ -149,7 +149,7 @@ Roo Code and Cline are VS Code extensions for autonomous coding that introduce r
 - Subagents must return ultra-condensed result packets rather than raw conversational logs to maintain supervisor reasoning capacity.
 
 #### 3. Proposed `cli-leader` Adaptation `[Planned]`
-- Adopt the **Boomerang Result Packet** pattern in [`internal/state`](file:///home/rootuser/wt-ecosystem-innovations/docs/GO_SPECIFICATION.md#internalstate), enforcing strict token limits on worker completion payloads.
+- Adopt the **Boomerang Result Packet** pattern in [`internal/state`](GO_SPECIFICATION.md#internalstate), enforcing strict token limits on worker completion payloads.
 - Use isolated Git worktrees (`internal/worker/worktree.go`) as physical sandboxes for candidate workers, enabling zero-overhead branch discarding.
 
 ---
@@ -171,8 +171,8 @@ Gastown coordinates 20–30 coding agents working concurrently across complex re
 - A serialized merge queue (Refinery) is mandatory when multiple speculative workers race to solve the same issue concurrently.
 
 #### 3. Proposed `cli-leader` Adaptation `[Planned]`
-- Implement the **Refinery Merge Queue** in [`internal/refinery`](file:///home/rootuser/wt-ecosystem-innovations/docs/GO_SPECIFICATION.md#internalrefinery) to serialize worktree validation and squash-merging.
-- Implement the **Stall Detector** in [`internal/state`](file:///home/rootuser/wt-ecosystem-innovations/docs/GO_SPECIFICATION.md#internalstate) using SHA256 cryptographic hashing of step states to detect agent loops and trigger watchdog intervention.
+- Implement the **Refinery Merge Queue** in [`internal/refinery`](GO_SPECIFICATION.md#internalrefinery) to serialize worktree validation and squash-merging.
+- Implement the **Stall Detector** in [`internal/state`](GO_SPECIFICATION.md#internalstate) using SHA256 cryptographic hashing of step states to detect agent loops and trigger watchdog intervention.
 
 ---
 
@@ -191,8 +191,8 @@ Tutti is a declarative multi-agent orchestrator written in Rust that models engi
 - Splitting agent operations into explicit roles (Executive Brain, Worker, Breaker, Reviewer) enforces checks and balances.
 
 #### 3. Proposed `cli-leader` Adaptation `[Planned]`
-- Adopt declarative configuration modeling in [`cli-leader.example.yaml`](file:///home/rootuser/wt-ecosystem-innovations/cli-leader.example.yaml) with explicit supervisor, worker, refinery, and sandbox definitions.
-- Implement structured role lanes in [`internal/worker`](file:///home/rootuser/wt-ecosystem-innovations/docs/GO_SPECIFICATION.md#internalworker) supporting specialized worker profiles (`aider`, `gemini_cli`, `ollama_cli`, `generic`).
+- Adopt declarative configuration modeling in [`cli-leader.example.yaml`](../cli-leader.example.yaml) with explicit supervisor, worker, refinery, and sandbox definitions.
+- Implement structured role lanes in [`internal/worker`](GO_SPECIFICATION.md#internalworker) supporting specialized worker profiles (`aider`, `gemini_cli`, `ollama_cli`, `generic`).
 
 ---
 
@@ -210,8 +210,8 @@ OpenClaw is a local-first autonomous daemon designed for persistent operation:
 - Long-running autonomous swarms require external push notifications to alert human operators when consensus fails or human intervention is required.
 
 #### 3. Proposed `cli-leader` Adaptation `[Planned]`
-- Support persistent `.brain/SOUL.md` ingestion in [`internal/memory`](file:///home/rootuser/wt-ecosystem-innovations/docs/GO_SPECIFICATION.md#internalmemory) to configure Claude Brain's persona and invariants.
-- Implement asynchronous notification dispatchers in [`internal/notify`](file:///home/rootuser/wt-ecosystem-innovations/docs/GO_SPECIFICATION.md#internalnotify) supporting Slack, Discord, and Telegram webhooks.
+- Support persistent `.brain/SOUL.md` ingestion in [`internal/memory`](GO_SPECIFICATION.md#internalmemory) to configure Claude Brain's persona and invariants.
+- Implement asynchronous notification dispatchers in [`internal/notify`](GO_SPECIFICATION.md#internalnotify) supporting Slack, Discord, and Telegram webhooks.
 
 ---
 
@@ -230,7 +230,7 @@ Claude-Squad is a lightweight CLI wrapper that runs multiple Claude Code and Aid
 - Direct PTY management with programmatic auto-response is required when worker tools lack native non-interactive flags.
 
 #### 3. Proposed `cli-leader` Adaptation `[Planned]`
-- Implement native Git worktree management in [`internal/worker/worktree.go`](file:///home/rootuser/wt-ecosystem-innovations/docs/GO_SPECIFICATION.md#internalworker) with mutex-serialized creation to prevent `.git/config.lock` collisions.
+- Implement native Git worktree management in [`internal/worker/worktree.go`](GO_SPECIFICATION.md#internalworker) with mutex-serialized creation to prevent `.git/config.lock` collisions.
 - Manage worker subprocesses directly via `creack/pty` in Go, eliminating external dependencies on Tmux.
 
 ---
@@ -253,7 +253,7 @@ LiteLLM is an API proxy translating among 100+ LLM providers using OpenAI and An
 - Claude CLI performs local pre-flight checks against `POST /v1/messages/count_tokens`; a compatible reverse proxy must handle this endpoint locally to prevent pre-flight crashes.
 
 #### 3. Proposed `cli-leader` Adaptation `[v0.1 Core]`
-- Implement the Anthropic-compatible reverse proxy in [`internal/gateway`](file:///home/rootuser/wt-ecosystem-innovations/docs/GO_SPECIFICATION.md#internalgateway) in pure Go using `valyala/fasthttp`.
+- Implement the Anthropic-compatible reverse proxy in [`internal/gateway`](GO_SPECIFICATION.md#internalgateway) in pure Go using `valyala/fasthttp`.
 - Implement local token counting via `tiktoken-go` for `POST /v1/messages/count_tokens`.
 - Bidirectionally map DeepSeek `reasoning_content` to Anthropic `thinking` blocks, preserving cryptographic signatures during multi-turn replay.
 
@@ -297,7 +297,7 @@ Maxim Bifrost is an ultra-low-latency enterprise LLM gateway implemented in Go:
 - Direct byte manipulation is the most efficient way to translate SSE streams between LLM provider formats.
 
 #### 3. Proposed `cli-leader` Adaptation `[v0.1 Core]`
-- Use `tidwall/gjson` and `tidwall/sjson` on raw byte buffers in [`internal/gateway`](file:///home/rootuser/wt-ecosystem-innovations/docs/GO_SPECIFICATION.md#internalgateway) to mutate JSON payloads and strip unsupported fields (such as `cache_control`) without struct marshaling.
+- Use `tidwall/gjson` and `tidwall/sjson` on raw byte buffers in [`internal/gateway`](GO_SPECIFICATION.md#internalgateway) to mutate JSON payloads and strip unsupported fields (such as `cache_control`) without struct marshaling.
 - **Target (unmeasured)**: Sub-millisecond routing and translation overhead across all upstream provider requests.
 
 ---
@@ -319,7 +319,7 @@ Semantic Router provides deterministic intent classification using vector embedd
 - Embedding-based routing provides deterministic, sub-millisecond intent categorization for common engineering tasks (e.g. testing, documentation, refactoring).
 
 #### 3. Proposed `cli-leader` Adaptation `[Planned]`
-- Implement **Stage 1** of the two-stage routing engine in [`internal/memory`](file:///home/rootuser/wt-ecosystem-innovations/docs/GO_SPECIFICATION.md#internalmemory) using pure-Go `chromem-go` to compute vector centroids and classify task categories.
+- Implement **Stage 1** of the two-stage routing engine in [`internal/memory`](GO_SPECIFICATION.md#internalmemory) using pure-Go `chromem-go` to compute vector centroids and classify task categories.
 - **Target (unmeasured)**: Sub-5ms pre-routing classification for task dispatch.
 
 ---
@@ -340,7 +340,7 @@ These enterprise gateways focus on multi-provider resiliency and unified schemas
 - Channel health tracking and automatic fallback must occur transparently to the Brain.
 
 #### 3. Proposed `cli-leader` Adaptation `[Planned]`
-- Implement resilient channel pools in [`internal/gateway`](file:///home/rootuser/wt-ecosystem-innovations/docs/GO_SPECIFICATION.md#internalgateway) that automatically retry requests on fallback keys or alternative providers upon encountering HTTP 429 rate limits.
+- Implement resilient channel pools in [`internal/gateway`](GO_SPECIFICATION.md#internalgateway) that automatically retry requests on fallback keys or alternative providers upon encountering HTTP 429 rate limits.
 
 ---
 
@@ -377,7 +377,7 @@ The Agent Client Protocol (ACP) is an open standard designed to decouple autonom
 - Rather than maintaining separate, brittle plugins for Zed, VS Code, and JetBrains, implementing an ACP server endpoint allows `cli-leader` to interface universally with modern IDEs out of the box.
 
 #### 3. Proposed `cli-leader` Adaptation `[Planned]`
-- Implement an ACP JSON-RPC server in [`internal/acp`](file:///home/rootuser/wt-ecosystem-innovations/docs/GO_SPECIFICATION.md#internalacp) to allow developers to drive `cli-leader` directly from Zed or JetBrains editors.
+- Implement an ACP JSON-RPC server in [`internal/acp`](GO_SPECIFICATION.md#internalacp) to allow developers to drive `cli-leader` directly from Zed or JetBrains editors.
 - *Open Questions*:
   - `TODO(verify): ACP specification schema revision and streaming PTY event support`
 
@@ -398,7 +398,7 @@ Zellij is a terminal workspace manager and multiplexer written in Rust:
 - Multi-pane layouts (Swarm Status, Live PTY Logs, Diff Viewer, Cognitive Memory) offer developers full operational visibility without terminal clutter.
 
 #### 3. Proposed `cli-leader` Adaptation `[Planned]`
-- Design the Bubbletea terminal dashboard in [`internal/tui`](file:///home/rootuser/wt-ecosystem-innovations/docs/GO_SPECIFICATION.md#internaltui) with inspiration from Zellij's multi-pane layout architecture.
+- Design the Bubbletea terminal dashboard in [`internal/tui`](GO_SPECIFICATION.md#internaltui) with inspiration from Zellij's multi-pane layout architecture.
 - Decouple PTY streaming through circular ring buffers with a 30Hz ticker batcher to render smooth UI updates without terminal lockup.
 - **Target (unmeasured)**: 60 FPS terminal UI rendering across multi-worker operations.
 - *Open Questions*:
@@ -423,7 +423,7 @@ Zellij is a terminal workspace manager and multiplexer written in Rust:
 - Traditional code coverage metrics fail to detect hollow tests; mutation testing is required to verify that new tests actually exercise business logic.
 
 #### 3. Proposed `cli-leader` Adaptation `[Planned]`
-- Implement the **Mutation Testing Verification Gate** in [`internal/verification`](file:///home/rootuser/wt-ecosystem-innovations/docs/GO_SPECIFICATION.md#internalverification).
+- Implement the **Mutation Testing Verification Gate** in [`internal/verification`](GO_SPECIFICATION.md#internalverification).
 - Dispatch the adversarial **Breaker** worker CLI to generate synthetic AST mutations across candidate worker diffs, blocking merge queue advancement if mutants survive.
 - *Open Questions*:
   - `TODO(verify): multi-language AST mutation engine bindings (Go, TypeScript, Python)`
@@ -450,7 +450,7 @@ Erlang/OTP structures concurrent applications into hierarchical supervision tree
 - Sibling processes that share state (e.g. PTY Master, circular log buffer, and prompt auto-responder) must share fate under a `one_for_all` strategy.
 
 #### 3. Proposed `cli-leader` Adaptation `[Planned]`
-- Implement hierarchical supervisor trees in [`internal/supervisor`](file:///home/rootuser/wt-ecosystem-innovations/docs/GO_SPECIFICATION.md#internalsupervisor) using `thejerf/suture/v4`.
+- Implement hierarchical supervisor trees in [`internal/supervisor`](GO_SPECIFICATION.md#internalsupervisor) using `thejerf/suture/v4`.
 - Apply `one_for_one` supervision to isolated speculative candidates in **Branch Racing**, and `one_for_all` supervision to compound worker process bundles.
 - Automatically bubble supervisor termination to Claude Brain for task re-planning when restart intensity limits are breached.
 
@@ -471,7 +471,7 @@ Temporal achieves fault-tolerant durable execution via event sourcing:
 - Separating high-level workflow orchestration from worker task execution enables deterministic resumption across crashes.
 
 #### 3. Proposed `cli-leader` Adaptation `[Planned]`
-- Implement the **Temporal / Durable Engine** in [`internal/state`](file:///home/rootuser/wt-ecosystem-innovations/docs/GO_SPECIFICATION.md#internalstate) backed by SQLite WAL mode.
+- Implement the **Temporal / Durable Engine** in [`internal/state`](GO_SPECIFICATION.md#internalstate) backed by SQLite WAL mode.
 - Store step outcomes in an append-only event table, providing a deterministic replay cache.
 - **Target (unmeasured)**: Zero duplicate LLM tokens spent on previously completed steps upon process restart.
 - Implement activity heartbeating that terminates hung CLI subprocesses after an operator-configured timeout (`heartbeat_timeout_sec`).
@@ -495,7 +495,7 @@ A Saga is a sequence of local transactions $T_1, T_2, \dots, T_n$ where each tra
 - Abandoning an exploratory speculative branch requires rolling back these non-git side effects to leave the developer's machine pristine.
 
 #### 3. Proposed `cli-leader` Adaptation `[Planned]`
-- Implement the **Saga Coordinator** in [`internal/refinery`](file:///home/rootuser/wt-ecosystem-innovations/docs/GO_SPECIFICATION.md#internalrefinery).
+- Implement the **Saga Coordinator** in [`internal/refinery`](GO_SPECIFICATION.md#internalrefinery).
 - Maintain an append-only LIFO compensation stack tracking non-git actions executed by workers.
 - Automatically execute compensating actions in reverse order when a speculative branch is abandoned or rejected by the Refinery gate.
 
@@ -520,7 +520,7 @@ Byzantine fault-tolerant consensus addresses systems where individual participan
 - Merging code into the main branch must require objective, non-LLM machine proof receipts combined with weighted peer reviews.
 
 #### 3. Proposed `cli-leader` Adaptation `[Planned]`
-- Implement the **Byzantine Quorum Consensus** engine in [`internal/verification`](file:///home/rootuser/wt-ecosystem-innovations/docs/GO_SPECIFICATION.md#internalverification).
+- Implement the **Byzantine Quorum Consensus** engine in [`internal/verification`](GO_SPECIFICATION.md#internalverification).
 - Enforce the **Fail-to-Pass (F2P)** protocol: verify that a reproduction test fails on unmodified HEAD and passes after the worker's patch.
 - Aggregate independent worker reviews weighted by their empirical Thompson Sampling capability scores before passing candidates to the Refinery.
 
@@ -549,7 +549,7 @@ Thompson Sampling (Posterior Sampling) addresses the multi-armed bandit explorat
 - Thompson Sampling balances trying promising alternative workers (exploration) while routing critical tasks to proven high-performing workers (exploitation).
 
 #### 3. Proposed `cli-leader` Adaptation `[Planned]`
-- Implement Bayesian Thompson Sampling in [`internal/memory`](file:///home/rootuser/wt-ecosystem-innovations/docs/GO_SPECIFICATION.md#internalmemory) as Stage 2 of the routing engine.
+- Implement Bayesian Thompson Sampling in [`internal/memory`](GO_SPECIFICATION.md#internalmemory) as Stage 2 of the routing engine.
 - Persist the $\text{Beta}(\alpha, \beta)$ capability matrix across worker profiles in the SQLite database, continuously refining routing weights from Refinery merge outcomes.
 
 ---
@@ -560,22 +560,22 @@ The following table summarizes the external innovations, their originating proje
 
 | Innovation / Technique | Originating Ecosystem Project / Theory | Core Architectural Value | Status Tag | Canonical Owner File |
 | :--- | :--- | :--- | :--- | :--- |
-| **Anthropic Messages Proxy & Gateway** | [BerriAI/litellm](https://github.com/BerriAI/litellm) / [maximhq/bifrost](https://github.com/maximhq/bifrost) | Reverse-proxying Claude CLI to multi-provider endpoints with zero-allocation SSE streaming. | `[v0.1 Core]` | [`docs/ARCHITECTURE.md`](file:///home/rootuser/wt-ecosystem-innovations/docs/ARCHITECTURE.md) §3 & [`docs/GO_SPECIFICATION.md`](file:///home/rootuser/wt-ecosystem-innovations/docs/GO_SPECIFICATION.md) (`internal/gateway`) |
-| **Reasoning Block Translation** | [BerriAI/litellm](https://github.com/BerriAI/litellm) / DeepSeek-R1 | Preserves DeepSeek `reasoning_content` to Anthropic `thinking` blocks with cryptographic signatures. | `[v0.1 Core]` | [`docs/ARCHITECTURE.md`](file:///home/rootuser/wt-ecosystem-innovations/docs/ARCHITECTURE.md) §3 & [`docs/GO_SPECIFICATION.md`](file:///home/rootuser/wt-ecosystem-innovations/docs/GO_SPECIFICATION.md) (`internal/gateway`) |
-| **Tree-Sitter RepoMap & PageRank** | [paul-gauthier/aider](https://github.com/paul-gauthier/aider) | Dense AST symbol graph ranking injected into LLM context within strict token budgets. | `[Planned]` | [`docs/ARCHITECTURE.md`](file:///home/rootuser/wt-ecosystem-innovations/docs/ARCHITECTURE.md) §3 & [`docs/GO_SPECIFICATION.md`](file:///home/rootuser/wt-ecosystem-innovations/docs/GO_SPECIFICATION.md) (`internal/memory`) |
-| **Dual-Ledger State Machine** | [All-Hands-AI/OpenHands](https://github.com/All-Hands-AI/OpenHands) | Decouples immutable user task invariants (`TaskLedger`) from atomic step tracking (`ProgressLedger`). | `[Planned]` | [`docs/ARCHITECTURE.md`](file:///home/rootuser/wt-ecosystem-innovations/docs/ARCHITECTURE.md) §3 & [`docs/GO_SPECIFICATION.md`](file:///home/rootuser/wt-ecosystem-innovations/docs/GO_SPECIFICATION.md) (`internal/state`) |
-| **Self-Evolving Skills Engine** | [NousResearch/hermes-agent](https://github.com/NousResearch/hermes-agent) | Autonomous on-the-fly synthesis and disk persistence of reusable worker skills (`.brain/skills/*.yaml`). | `[Planned]` | [`docs/ARCHITECTURE.md`](file:///home/rootuser/wt-ecosystem-innovations/docs/ARCHITECTURE.md) §3 & [`docs/GO_SPECIFICATION.md`](file:///home/rootuser/wt-ecosystem-innovations/docs/GO_SPECIFICATION.md) (`internal/memory`) |
-| **Agent Client Protocol (ACP) Server** | [agentclientprotocol.com](https://agentclientprotocol.com) (Zed / JetBrains) | Standardized JSON-RPC protocol enabling zero-plugin integration with modern IDEs. | `[Planned]` | [`docs/ARCHITECTURE.md`](file:///home/rootuser/wt-ecosystem-innovations/docs/ARCHITECTURE.md) §3 & [`docs/GO_SPECIFICATION.md`](file:///home/rootuser/wt-ecosystem-innovations/docs/GO_SPECIFICATION.md) (`internal/acp`) |
-| **Mutation Testing Verification Gate** | [sourcefrog/cargo-mutants](https://github.com/sourcefrog/cargo-mutants) | Injects synthetic AST defects into candidate diffs to eliminate hollow/tautological unit tests. | `[Planned]` | [`docs/ARCHITECTURE.md`](file:///home/rootuser/wt-ecosystem-innovations/docs/ARCHITECTURE.md) §3 & [`docs/GO_SPECIFICATION.md`](file:///home/rootuser/wt-ecosystem-innovations/docs/GO_SPECIFICATION.md) (`internal/verification`) |
-| **Speculative Branch Racing** | [smtg-ai/claude-squad](https://github.com/smtg-ai/claude-squad) | Concurrent worker dispatch in isolated Git worktrees, merging the first candidate that passes gates. | `[Planned]` | [`docs/ARCHITECTURE.md`](file:///home/rootuser/wt-ecosystem-innovations/docs/ARCHITECTURE.md) §3 & [`docs/GO_SPECIFICATION.md`](file:///home/rootuser/wt-ecosystem-innovations/docs/GO_SPECIFICATION.md) (`internal/speculative`) |
-| **Refinery Bors-Style Merge Queue** | [gastownhall/gastown](https://github.com/gastownhall/gastown) | Serialized merge queue rebasing and testing candidate worktree branches before trunk integration. | `[Planned]` | [`docs/ARCHITECTURE.md`](file:///home/rootuser/wt-ecosystem-innovations/docs/ARCHITECTURE.md) §3 & [`docs/GO_SPECIFICATION.md`](file:///home/rootuser/wt-ecosystem-innovations/docs/GO_SPECIFICATION.md) (`internal/refinery`) |
-| **Erlang OTP Supervisor Trees** | Erlang/OTP (Armstrong et al.) | Hierarchical process supervision (`one_for_one`, `one_for_all`) with restart rate limiting. | `[Planned]` | [`docs/ARCHITECTURE.md`](file:///home/rootuser/wt-ecosystem-innovations/docs/ARCHITECTURE.md) §3 & [`docs/GO_SPECIFICATION.md`](file:///home/rootuser/wt-ecosystem-innovations/docs/GO_SPECIFICATION.md) (`internal/supervisor`) |
-| **Temporal Durable WAL Engine** | Temporal / Cadence | Append-only event history (`workflow_events`) enabling crash recovery with zero duplicate token costs. | `[Planned]` | [`docs/ARCHITECTURE.md`](file:///home/rootuser/wt-ecosystem-innovations/docs/ARCHITECTURE.md) §3 & [`docs/GO_SPECIFICATION.md`](file:///home/rootuser/wt-ecosystem-innovations/docs/GO_SPECIFICATION.md) (`internal/state`) |
-| **Saga Non-Git Compensating Stack** | Garcia-Molina & Salem (1987) | LIFO rollback stack ($T_i \leftrightarrow C_i$) undoing database, package, and container mutations. | `[Planned]` | [`docs/ARCHITECTURE.md`](file:///home/rootuser/wt-ecosystem-innovations/docs/ARCHITECTURE.md) §3 & [`docs/GO_SPECIFICATION.md`](file:///home/rootuser/wt-ecosystem-innovations/docs/GO_SPECIFICATION.md) (`internal/refinery`) |
-| **Byzantine Quorum Consensus** | Lamport, Shostak, Pease (1982) | Replaces trust in LLM assertions with machine proof receipts and Thompson-weighted peer review. | `[Planned]` | [`docs/ARCHITECTURE.md`](file:///home/rootuser/wt-ecosystem-innovations/docs/ARCHITECTURE.md) §3 & [`docs/GO_SPECIFICATION.md`](file:///home/rootuser/wt-ecosystem-innovations/docs/GO_SPECIFICATION.md) (`internal/verification`) |
-| **Bayesian Thompson Sampling Matrix** | William R. Thompson (1933) | Dynamic capability estimation using conjugate $\text{Beta}(\alpha, \beta)$ priors to balance exploration and exploitation. | `[Planned]` | [`docs/ARCHITECTURE.md`](file:///home/rootuser/wt-ecosystem-innovations/docs/ARCHITECTURE.md) §3 & [`docs/GO_SPECIFICATION.md`](file:///home/rootuser/wt-ecosystem-innovations/docs/GO_SPECIFICATION.md) (`internal/memory`) |
-| **Zellij-Inspired Multiplexed TUI** | [zellij-org/zellij](https://github.com/zellij-org/zellij) | Decoupled terminal dashboard with ring log buffering and 30Hz ticker batching. | `[Planned]` | [`docs/ARCHITECTURE.md`](file:///home/rootuser/wt-ecosystem-innovations/docs/ARCHITECTURE.md) §3 & [`docs/GO_SPECIFICATION.md`](file:///home/rootuser/wt-ecosystem-innovations/docs/GO_SPECIFICATION.md) (`internal/tui`) |
-| **Multi-Channel Push Notifications** | [openclaw/openclaw](https://github.com/openclaw/openclaw) | Real-time webhook notifications across Slack, Discord, and Telegram for long-running swarms. | `[Planned]` | [`docs/ARCHITECTURE.md`](file:///home/rootuser/wt-ecosystem-innovations/docs/ARCHITECTURE.md) §3 & [`docs/GO_SPECIFICATION.md`](file:///home/rootuser/wt-ecosystem-innovations/docs/GO_SPECIFICATION.md) (`internal/notify`) |
-| **Tiered Linux Sandboxing** | Linux Bubblewrap / Landlock | Unprivileged user namespaces and kernel LSM filesystem sandboxing for untrusted worker execution. | `[Planned]` | [`docs/ARCHITECTURE.md`](file:///home/rootuser/wt-ecosystem-innovations/docs/ARCHITECTURE.md) §3 & [`docs/GO_SPECIFICATION.md`](file:///home/rootuser/wt-ecosystem-innovations/docs/GO_SPECIFICATION.md) (`internal/sandbox`) |
-| **Cost-Quality Pareto Matrix Routing** | [lm-sys/RouteLLM](https://github.com/lm-sys/RouteLLM) | Matrix Factorization win-rate classification predicting strong vs. weak model utility. | `[Research]` | [`docs/ECOSYSTEM_INNOVATIONS.md`](file:///home/rootuser/wt-ecosystem-innovations/docs/ECOSYSTEM_INNOVATIONS.md) §3.2 |
-| **Sequential Model Cascading** | [FrugalGPT (Stanford)](https://arxiv.org/abs/2305.05176) | Sequential model escalation ($M_1 \to M_2 \to \dots$) based on output verification confidence. | `[Research]` | [`docs/ECOSYSTEM_INNOVATIONS.md`](file:///home/rootuser/wt-ecosystem-innovations/docs/ECOSYSTEM_INNOVATIONS.md) §3.6 |
+| **Anthropic Messages Proxy & Gateway** | [BerriAI/litellm](https://github.com/BerriAI/litellm) / [maximhq/bifrost](https://github.com/maximhq/bifrost) | Reverse-proxying Claude CLI to multi-provider endpoints with zero-allocation SSE streaming. | `[v0.1 Core]` | [`docs/ARCHITECTURE.md`](ARCHITECTURE.md) §3 & [`docs/GO_SPECIFICATION.md`](GO_SPECIFICATION.md) (`internal/gateway`) |
+| **Reasoning Block Translation** | [BerriAI/litellm](https://github.com/BerriAI/litellm) / DeepSeek-R1 | Preserves DeepSeek `reasoning_content` to Anthropic `thinking` blocks with cryptographic signatures. | `[v0.1 Core]` | [`docs/ARCHITECTURE.md`](ARCHITECTURE.md) §3 & [`docs/GO_SPECIFICATION.md`](GO_SPECIFICATION.md) (`internal/gateway`) |
+| **Tree-Sitter RepoMap & PageRank** | [paul-gauthier/aider](https://github.com/paul-gauthier/aider) | Dense AST symbol graph ranking injected into LLM context within strict token budgets. | `[Planned]` | [`docs/ARCHITECTURE.md`](ARCHITECTURE.md) §3 & [`docs/GO_SPECIFICATION.md`](GO_SPECIFICATION.md) (`internal/memory`) |
+| **Dual-Ledger State Machine** | [All-Hands-AI/OpenHands](https://github.com/All-Hands-AI/OpenHands) | Decouples immutable user task invariants (`TaskLedger`) from atomic step tracking (`ProgressLedger`). | `[Planned]` | [`docs/ARCHITECTURE.md`](ARCHITECTURE.md) §3 & [`docs/GO_SPECIFICATION.md`](GO_SPECIFICATION.md) (`internal/state`) |
+| **Self-Evolving Skills Engine** | [NousResearch/hermes-agent](https://github.com/NousResearch/hermes-agent) | Autonomous on-the-fly synthesis and disk persistence of reusable worker skills (`.brain/skills/*.yaml`). | `[Planned]` | [`docs/ARCHITECTURE.md`](ARCHITECTURE.md) §3 & [`docs/GO_SPECIFICATION.md`](GO_SPECIFICATION.md) (`internal/memory`) |
+| **Agent Client Protocol (ACP) Server** | [agentclientprotocol.com](https://agentclientprotocol.com) (Zed / JetBrains) | Standardized JSON-RPC protocol enabling zero-plugin integration with modern IDEs. | `[Planned]` | [`docs/ARCHITECTURE.md`](ARCHITECTURE.md) §3 & [`docs/GO_SPECIFICATION.md`](GO_SPECIFICATION.md) (`internal/acp`) |
+| **Mutation Testing Verification Gate** | [sourcefrog/cargo-mutants](https://github.com/sourcefrog/cargo-mutants) | Injects synthetic AST defects into candidate diffs to eliminate hollow/tautological unit tests. | `[Planned]` | [`docs/ARCHITECTURE.md`](ARCHITECTURE.md) §3 & [`docs/GO_SPECIFICATION.md`](GO_SPECIFICATION.md) (`internal/verification`) |
+| **Speculative Branch Racing** | [smtg-ai/claude-squad](https://github.com/smtg-ai/claude-squad) | Concurrent worker dispatch in isolated Git worktrees, merging the first candidate that passes gates. | `[Planned]` | [`docs/ARCHITECTURE.md`](ARCHITECTURE.md) §3 & [`docs/GO_SPECIFICATION.md`](GO_SPECIFICATION.md) (`internal/speculative`) |
+| **Refinery Bors-Style Merge Queue** | [gastownhall/gastown](https://github.com/gastownhall/gastown) | Serialized merge queue rebasing and testing candidate worktree branches before trunk integration. | `[Planned]` | [`docs/ARCHITECTURE.md`](ARCHITECTURE.md) §3 & [`docs/GO_SPECIFICATION.md`](GO_SPECIFICATION.md) (`internal/refinery`) |
+| **Erlang OTP Supervisor Trees** | Erlang/OTP (Armstrong et al.) | Hierarchical process supervision (`one_for_one`, `one_for_all`) with restart rate limiting. | `[Planned]` | [`docs/ARCHITECTURE.md`](ARCHITECTURE.md) §3 & [`docs/GO_SPECIFICATION.md`](GO_SPECIFICATION.md) (`internal/supervisor`) |
+| **Temporal Durable WAL Engine** | Temporal / Cadence | Append-only event history (`workflow_events`) enabling crash recovery with zero duplicate token costs. | `[Planned]` | [`docs/ARCHITECTURE.md`](ARCHITECTURE.md) §3 & [`docs/GO_SPECIFICATION.md`](GO_SPECIFICATION.md) (`internal/state`) |
+| **Saga Non-Git Compensating Stack** | Garcia-Molina & Salem (1987) | LIFO rollback stack ($T_i \leftrightarrow C_i$) undoing database, package, and container mutations. | `[Planned]` | [`docs/ARCHITECTURE.md`](ARCHITECTURE.md) §3 & [`docs/GO_SPECIFICATION.md`](GO_SPECIFICATION.md) (`internal/refinery`) |
+| **Byzantine Quorum Consensus** | Lamport, Shostak, Pease (1982) | Replaces trust in LLM assertions with machine proof receipts and Thompson-weighted peer review. | `[Planned]` | [`docs/ARCHITECTURE.md`](ARCHITECTURE.md) §3 & [`docs/GO_SPECIFICATION.md`](GO_SPECIFICATION.md) (`internal/verification`) |
+| **Bayesian Thompson Sampling Matrix** | William R. Thompson (1933) | Dynamic capability estimation using conjugate $\text{Beta}(\alpha, \beta)$ priors to balance exploration and exploitation. | `[Planned]` | [`docs/ARCHITECTURE.md`](ARCHITECTURE.md) §3 & [`docs/GO_SPECIFICATION.md`](GO_SPECIFICATION.md) (`internal/memory`) |
+| **Zellij-Inspired Multiplexed TUI** | [zellij-org/zellij](https://github.com/zellij-org/zellij) | Decoupled terminal dashboard with ring log buffering and 30Hz ticker batching. | `[Planned]` | [`docs/ARCHITECTURE.md`](ARCHITECTURE.md) §3 & [`docs/GO_SPECIFICATION.md`](GO_SPECIFICATION.md) (`internal/tui`) |
+| **Multi-Channel Push Notifications** | [openclaw/openclaw](https://github.com/openclaw/openclaw) | Real-time webhook notifications across Slack, Discord, and Telegram for long-running swarms. | `[Planned]` | [`docs/ARCHITECTURE.md`](ARCHITECTURE.md) §3 & [`docs/GO_SPECIFICATION.md`](GO_SPECIFICATION.md) (`internal/notify`) |
+| **Tiered Linux Sandboxing** | Linux Bubblewrap / Landlock | Unprivileged user namespaces and kernel LSM filesystem sandboxing for untrusted worker execution. | `[Planned]` | [`docs/ARCHITECTURE.md`](ARCHITECTURE.md) §3 & [`docs/GO_SPECIFICATION.md`](GO_SPECIFICATION.md) (`internal/sandbox`) |
+| **Cost-Quality Pareto Matrix Routing** | [lm-sys/RouteLLM](https://github.com/lm-sys/RouteLLM) | Matrix Factorization win-rate classification predicting strong vs. weak model utility. | `[Research]` | [`docs/ECOSYSTEM_INNOVATIONS.md`](ECOSYSTEM_INNOVATIONS.md) §3.2 |
+| **Sequential Model Cascading** | [FrugalGPT (Stanford)](https://arxiv.org/abs/2305.05176) | Sequential model escalation ($M_1 \to M_2 \to \dots$) based on output verification confidence. | `[Research]` | [`docs/ECOSYSTEM_INNOVATIONS.md`](ECOSYSTEM_INNOVATIONS.md) §3.6 |

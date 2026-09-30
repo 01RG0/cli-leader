@@ -1,6 +1,6 @@
 # README.md Audit Report
 
-This audit evaluates the original `README.md` against the rules, boundaries, and standards set forth in [`docs/_review/CONTRACT.md`](file:///home/rootuser/wt-readme/docs/_review/CONTRACT.md).
+This audit evaluates the original `README.md` against the rules, boundaries, and standards set forth in [`docs/_review/CONTRACT.md`](CONTRACT.md).
 
 ## Summary Metrics
 - **Drex Marketing Language Score**: 0.937 (Target: <0.05) — Extremely high presence of hype words ("superpowers", "blazing-fast", "rock-solid", "ever-learning").

@@ -1,6 +1,6 @@
 # README.md Questions & Verification Log
 
-In accordance with [`docs/_review/CONTRACT.md`](file:///home/rootuser/wt-readme/docs/_review/CONTRACT.md) § 4.3 ("Never Invent Facts"), any missing parameters, unconfirmed behaviors, or specifications not explicitly established in CONTRACT.md are documented below with their corresponding `TODO(verify)` tags.
+In accordance with [`docs/_review/CONTRACT.md`](CONTRACT.md) § 4.3 ("Never Invent Facts"), any missing parameters, unconfirmed behaviors, or specifications not explicitly established in CONTRACT.md are documented below with their corresponding `TODO(verify)` tags.
 
 | Issue ID | Tag in Documentation | Question / Required Verification | Impacted Section |
 | :--- | :--- | :--- | :--- |

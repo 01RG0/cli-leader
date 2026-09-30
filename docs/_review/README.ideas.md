@@ -1,6 +1,6 @@
 # README.md Ideas & Redirection Log
 
-In accordance with [`docs/_review/CONTRACT.md`](file:///home/rootuser/wt-readme/docs/_review/CONTRACT.md) § 4.2 ("Never Delete an Idea"), all technical ideas, low-level specifications, and subsystem implementation details moved or redirected from `README.md` to canonical owner documents are recorded below.
+In accordance with [`docs/_review/CONTRACT.md`](CONTRACT.md) § 4.2 ("Never Delete an Idea"), all technical ideas, low-level specifications, and subsystem implementation details moved or redirected from `README.md` to canonical owner documents are recorded below.
 
 | Idea | Old Location | New Location |
 | :--- | :--- | :--- |

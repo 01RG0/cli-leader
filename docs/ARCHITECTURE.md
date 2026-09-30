@@ -48,7 +48,7 @@
 └────────────────────────────────────────────────────────────────────────┘
 ```
 
-The system separates concerns across specialized subsystems coordinated through the `cli-leader` daemon. Concrete Go interfaces and data structures are defined in [GO_SPECIFICATION.md](file:///home/rootuser/wt-architecture/docs/GO_SPECIFICATION.md), and milestone deliverables are scheduled in [ROADMAP.md](file:///home/rootuser/wt-architecture/docs/ROADMAP.md).
+The system separates concerns across specialized subsystems coordinated through the `cli-leader` daemon. Concrete Go interfaces and data structures are defined in [GO_SPECIFICATION.md](GO_SPECIFICATION.md), and milestone deliverables are scheduled in [ROADMAP.md](ROADMAP.md).
 
 ---
 
@@ -63,7 +63,7 @@ To prevent infinite loops and context contamination, `cli-leader` enforces stric
 1. **TaskLedger (`tasks`)**: Immutable record of high-level user objectives, architectural constraints, and invariant acceptance criteria.
 2. **ProgressLedger (`task_steps`)**: Dynamic state machine tracking granular step statuses (`pending`, `running`, `reviewing`, `completed`, `failed`).
 
-Concrete struct definitions for `TaskLedger` and `ProgressLedger` are specified in [GO_SPECIFICATION.md](file:///home/rootuser/wt-architecture/docs/GO_SPECIFICATION.md#1-standard-project-layout) under `internal/state/dual_ledger.go`.
+Concrete struct definitions for `TaskLedger` and `ProgressLedger` are specified in [GO_SPECIFICATION.md](GO_SPECIFICATION.md#1-standard-project-layout) under `internal/state/dual_ledger.go`.
 
 #### 3.1.2 Durable Engine (Temporal-Grade SQLite WAL Replay) [Planned]
 The **Durable Engine** implements a SQLite WAL-backed event replay mechanism inspired by Temporal and Cadence:
@@ -242,7 +242,7 @@ The ACP server in `internal/acp` communicates via JSON-RPC 2.0 over stdio with e
   }
 }
 ```
-*TODO(verify): ACP agent/sendMessage streaming response structure* (tracked in [ARCHITECTURE.questions.md](file:///home/rootuser/wt-architecture/docs/_review/ARCHITECTURE.questions.md#open-questions--verification-items)).
+*TODO(verify): ACP agent/sendMessage streaming response structure* (tracked in [ARCHITECTURE.questions.md](_review/ARCHITECTURE.questions.md#open-questions--verification-items)).
 
 ---
 
@@ -263,7 +263,7 @@ The **Gateway** is an internal Anthropic-compatible reverse proxy implemented in
 #### 3.2.3 Reasoning Block Preservation [v0.1 Core]
 - Bidirectionally maps upstream DeepSeek-R1 `reasoning_content` to Anthropic `thinking` blocks (`thinking_delta`).
 - Preserves thinking blocks and associated cryptographic signatures across multi-turn conversations for durable replay.
-- *TODO(verify): Gemini streaming thinking block envelope specification* (tracked in [ARCHITECTURE.questions.md](file:///home/rootuser/wt-architecture/docs/_review/ARCHITECTURE.questions.md#open-questions--verification-items)).
+- *TODO(verify): Gemini streaming thinking block envelope specification* (tracked in [ARCHITECTURE.questions.md](_review/ARCHITECTURE.questions.md#open-questions--verification-items)).
 
 #### 3.2.4 Tool Calling & Multi-Turn Role Decomposition [v0.1 Core]
 - Decomposes combined Anthropic user turns containing text and tool execution results into separate `tool` messages followed by a trailing `user` message for OpenAI-compatible upstreams.
@@ -348,7 +348,7 @@ Adopting the Erlang/Elixir "Let It Crash" philosophy, the Supervisor avoids defe
 - **`one_for_all`**: Applied to compound worker bundles consisting of PTY Master, Subprocess, Auto-Reply Interceptor, and Circular Ring Buffer. If the CLI process terminates, the entire bundle is torn down to eliminate zombie goroutines.
 - **`rest_for_one`**: Applied to linear verification pipelines (Worktree Setup $\longrightarrow$ F2P Baseline Test $\longrightarrow$ Worker CLI $\longrightarrow$ Mutation Gate).
 
-Go supervisor interfaces and restart strategies are specified in [GO_SPECIFICATION.md](file:///home/rootuser/wt-architecture/docs/GO_SPECIFICATION.md#21-erlang-otp-supervisor-tree).
+Go supervisor interfaces and restart strategies are specified in [GO_SPECIFICATION.md](GO_SPECIFICATION.md#21-erlang-otp-supervisor-tree).
 
 #### 3.3.2 Restart Intensity Escalation [Planned]
 The Supervisor tracks failures within a sliding window:
@@ -359,7 +359,7 @@ Interactive CLIs expect terminal capabilities (VT100 ANSI sequences, confirmatio
 - **PTY Allocation**: Uses `creack/pty.StartWithSize` with `Setsid: true` and sets Linux `Pdeathsig = syscall.SIGTERM` to guarantee child cleanup on daemon termination.
 - **Process Teardown Escalation**: Sends `SIGTERM` to process group `-pgid`, grants a 3-second grace window, and escalates to `SIGKILL` on `-pgid` if the process fails to exit.
 - **Auto-Reply Interceptor**: A sliding-window regex scanner intercepting interactive prompts (e.g. `[y/N]`, `Apply changes?`) and responding autonomously.
-- *TODO(verify): Interactive PTY stdin streaming support via MCP* (tracked in [ARCHITECTURE.questions.md](file:///home/rootuser/wt-architecture/docs/_review/ARCHITECTURE.questions.md#open-questions--verification-items)).
+- *TODO(verify): Interactive PTY stdin streaming support via MCP* (tracked in [ARCHITECTURE.questions.md](_review/ARCHITECTURE.questions.md#open-questions--verification-items)).
 
 #### 3.3.4 Decoupled Circular Log Buffer & TUI Batcher [Planned]
 - Worker PTY outputs are captured into a thread-safe circular ring buffer (`RingLogBuffer`).
@@ -408,7 +408,7 @@ A **Saga** is a sequence of local transactions with compensating rollback action
 - Forward actions register compensating functions:
   $$\text{Forward Action: } T_i \quad \longleftrightarrow \quad \text{Compensating Undo: } C_i$$
 - When a candidate branch is abandoned or execution encounters failure, the Saga coordinator (`internal/refinery/saga.go`) executes compensating actions in reverse LIFO order ($C_n \longrightarrow C_1$), restoring the environment.
-- Concrete Go types for `SagaAction` and `SagaCoordinator` are defined in [GO_SPECIFICATION.md](file:///home/rootuser/wt-architecture/docs/GO_SPECIFICATION.md#23-saga-non-git-side-effect-coordinator).
+- Concrete Go types for `SagaAction` and `SagaCoordinator` are defined in [GO_SPECIFICATION.md](GO_SPECIFICATION.md#23-saga-non-git-side-effect-coordinator).
 
 #### 3.4.3 Bors-Style Refinery Merge Queue [Planned]
 The **Refinery** (`internal/refinery/queue.go`) is a serialized merge queue:
@@ -445,7 +445,7 @@ To verify that unit tests meaningfully exercise code logic rather than executing
   3. F2P execution logs demonstrating failure on `HEAD` and success on the patch.
   4. Linter execution log confirming zero static analysis violations.
 - Reviewer votes are weighted by their historical Bayesian capability score: $\mathbb{E}[\text{Beta}(\alpha, \beta)]$.
-- Consensus arbiter contracts are defined in [GO_SPECIFICATION.md](file:///home/rootuser/wt-architecture/docs/GO_SPECIFICATION.md#24-byzantine-quorum-consensus-arbiter).
+- Consensus arbiter contracts are defined in [GO_SPECIFICATION.md](GO_SPECIFICATION.md#24-byzantine-quorum-consensus-arbiter).
 
 ---
 
@@ -481,7 +481,7 @@ The **Memory Store** (`internal/memory`) manages persistent semantic knowledge, 
 - The **RepoMap** extracts definition and reference tags across codebases using Tree-Sitter Go bindings (`smacker/go-tree-sitter`).
 - Builds a directed symbol reference graph and calculates **Personalized PageRank** focused around active working files.
 - Emits a structural map ranked by symbol centrality, budgeted within configurable token limits (default `memory.max_repo_map_tokens: 1024`).
-- Interface specifications are located in [GO_SPECIFICATION.md](file:///home/rootuser/wt-architecture/docs/GO_SPECIFICATION.md#25-tree-sitter-pagerank-repo-map-engine).
+- Interface specifications are located in [GO_SPECIFICATION.md](GO_SPECIFICATION.md#25-tree-sitter-pagerank-repo-map-engine).
 
 #### 3.6.3 Reflexion Verbal Reinforcement Loop [Planned]
 - When tasks or tests fail, the **Reflexion** engine converts raw stack traces and compiler diagnostics into actionable verbal rules:
@@ -494,17 +494,17 @@ The **Memory Store** (`internal/memory`) manages persistent semantic knowledge, 
 - Matches active file paths using `bmatcuk/doublestar/v4` and injects matching rule directives into worker prompts, strictly capped at `memory.max_injected_rule_tokens: 800`.
 
 #### 3.6.5 Soul File (`.brain/SOUL.md`) & Notification Webhooks [Planned]
-- **Soul File**: The persistent personality, mission, and hard boundary definition injected into the cognitive Brain from `.brain/SOUL.md`. (Informed by OpenClaw architecture; see [ECOSYSTEM_INNOVATIONS.md](file:///home/rootuser/wt-architecture/docs/ECOSYSTEM_INNOVATIONS.md#1-multi-agent-swarms--cli-orchestrators)).
+- **Soul File**: The persistent personality, mission, and hard boundary definition injected into the cognitive Brain from `.brain/SOUL.md`. (Informed by OpenClaw architecture; see [ECOSYSTEM_INNOVATIONS.md](ECOSYSTEM_INNOVATIONS.md#1-multi-agent-swarms--cli-orchestrators)).
 - Asynchronous notifications dispatch via `internal/notify` to Slack, Discord, or Telegram webhooks when long-running tasks complete, fail, or require human intervention.
 
 #### 3.6.6 Self-Evolving Skills (`.brain/skills/*.yaml`) [Research]
-- When a worker discovers a novel multi-step procedural sequence (e.g. customized test generation or database migration flow), the engine extracts the workflow into a reusable macro stored in `.brain/skills/*.yaml`. (Informed by Hermes Agent; see [ECOSYSTEM_INNOVATIONS.md](file:///home/rootuser/wt-architecture/docs/ECOSYSTEM_INNOVATIONS.md#1-multi-agent-swarms--cli-orchestrators)).
+- When a worker discovers a novel multi-step procedural sequence (e.g. customized test generation or database migration flow), the engine extracts the workflow into a reusable macro stored in `.brain/skills/*.yaml`. (Informed by Hermes Agent; see [ECOSYSTEM_INNOVATIONS.md](ECOSYSTEM_INNOVATIONS.md#1-multi-agent-swarms--cli-orchestrators)).
 
 #### 3.6.7 Two-Stage Centroid & Thompson Sampling Routing Engine [Research]
 - **Stage 1**: Semantic centroid vector classification via pure-Go `chromem-go` mapping incoming task prompts to operational categories.
   - Performance target: **Target (unmeasured): <5ms latency**.
 - **Stage 2**: **Thompson Sampling** multi-armed bandit algorithm updating capability distributions $\text{Beta}(\alpha, \beta)$ based on historical task successes and test verification results, routing tasks to the optimal worker CLI.
-- *TODO(verify): Thompson Sampling prior distribution parameters* (tracked in [ARCHITECTURE.questions.md](file:///home/rootuser/wt-architecture/docs/_review/ARCHITECTURE.questions.md#open-questions--verification-items)).
+- *TODO(verify): Thompson Sampling prior distribution parameters* (tracked in [ARCHITECTURE.questions.md](_review/ARCHITECTURE.questions.md#open-questions--verification-items)).
 
 ---
 
@@ -523,7 +523,7 @@ On Linux systems where Bubblewrap is unavailable or restricted:
 - Uses a re-exec trampoline (`cli-leader __sandbox_exec`) that applies Linux Landlock LSM rules via `go-landlock`.
 - Imposes irreversible filesystem access rules restricting write permissions strictly to the active worktree and `/tmp`.
 - Performance target: **Target (unmeasured): <1ms overhead** during process trampoline initialization.
-- *TODO(verify): Landlock network restriction capabilities across kernel versions* (tracked in [ARCHITECTURE.questions.md](file:///home/rootuser/wt-architecture/docs/_review/ARCHITECTURE.questions.md#open-questions--verification-items)).
+- *TODO(verify): Landlock network restriction capabilities across kernel versions* (tracked in [ARCHITECTURE.questions.md](_review/ARCHITECTURE.questions.md#open-questions--verification-items)).
 
 ---
 
@@ -533,11 +533,11 @@ The following table summarizes the subsystem ownership, Go package paths under `
 
 | Subsystem | Canonical Component | Canonical Go Package | Configuration Keys | Status Tag | Reference Specification |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Brain, MCP & ACP** | Brain | `internal/mcp`<br>`internal/acp`<br>`internal/state` | `memory.soul_file`<br>`version` | `[Planned]` | [GO_SPECIFICATION.md](file:///home/rootuser/wt-architecture/docs/GO_SPECIFICATION.md#1-standard-project-layout) |
-| **Multi-Provider Gateway** | Gateway | `internal/gateway`<br>`internal/gateway/providers` | `gateway.listen_addr`<br>`gateway.default_provider`<br>`gateway.providers` | `[v0.1 Core]` | [GO_SPECIFICATION.md](file:///home/rootuser/wt-architecture/docs/GO_SPECIFICATION.md#1-standard-project-layout) |
-| **Worker Engine & Supervisor** | Worker Manager & Supervisor | `internal/supervisor`<br>`internal/worker`<br>`internal/worker/adapters` | `workers.supervisor`<br>`workers.<tool>` | `[Planned]` | [GO_SPECIFICATION.md](file:///home/rootuser/wt-architecture/docs/GO_SPECIFICATION.md#21-erlang-otp-supervisor-tree) |
-| **Speculative Racing & Sagas** | Refinery & Speculative Dispatcher | `internal/speculative`<br>`internal/refinery` | `speculative.enabled`<br>`speculative.max_parallel_candidates`<br>`refinery.test_command` | `[Planned]` | [GO_SPECIFICATION.md](file:///home/rootuser/wt-architecture/docs/GO_SPECIFICATION.md#23-saga-non-git-side-effect-coordinator) |
-| **Verification & Quorum** | Verification Gate | `internal/verification` | `refinery.mutation_testing`<br>`refinery.squash_merges` | `[Planned]` / `[Research]` | [GO_SPECIFICATION.md](file:///home/rootuser/wt-architecture/docs/GO_SPECIFICATION.md#24-byzantine-quorum-consensus-arbiter) |
-| **Cognitive Memory Store** | Memory Store | `internal/memory`<br>`internal/notify` | `memory.db_path`<br>`memory.conventions_dir`<br>`memory.thompson_sampling`<br>`notifications.*` | `[Planned]` / `[Research]` | [GO_SPECIFICATION.md](file:///home/rootuser/wt-architecture/docs/GO_SPECIFICATION.md#25-tree-sitter-pagerank-repo-map-engine) |
-| **Workspace Sandboxing** | Sandbox | `internal/sandbox` | `sandbox.tier`<br>`sandbox.allow_network` | `[Planned]` | [GO_SPECIFICATION.md](file:///home/rootuser/wt-architecture/docs/GO_SPECIFICATION.md#1-standard-project-layout) |
-| **Mission Control TUI** | TUI | `internal/tui`<br>`internal/tui/views` | `version` | `[Planned]` | [GO_SPECIFICATION.md](file:///home/rootuser/wt-architecture/docs/GO_SPECIFICATION.md#1-standard-project-layout) |
+| **Brain, MCP & ACP** | Brain | `internal/mcp`<br>`internal/acp`<br>`internal/state` | `memory.soul_file`<br>`version` | `[Planned]` | [GO_SPECIFICATION.md](GO_SPECIFICATION.md#1-standard-project-layout) |
+| **Multi-Provider Gateway** | Gateway | `internal/gateway`<br>`internal/gateway/providers` | `gateway.listen_addr`<br>`gateway.default_provider`<br>`gateway.providers` | `[v0.1 Core]` | [GO_SPECIFICATION.md](GO_SPECIFICATION.md#1-standard-project-layout) |
+| **Worker Engine & Supervisor** | Worker Manager & Supervisor | `internal/supervisor`<br>`internal/worker`<br>`internal/worker/adapters` | `workers.supervisor`<br>`workers.<tool>` | `[Planned]` | [GO_SPECIFICATION.md](GO_SPECIFICATION.md#21-erlang-otp-supervisor-tree) |
+| **Speculative Racing & Sagas** | Refinery & Speculative Dispatcher | `internal/speculative`<br>`internal/refinery` | `speculative.enabled`<br>`speculative.max_parallel_candidates`<br>`refinery.test_command` | `[Planned]` | [GO_SPECIFICATION.md](GO_SPECIFICATION.md#23-saga-non-git-side-effect-coordinator) |
+| **Verification & Quorum** | Verification Gate | `internal/verification` | `refinery.mutation_testing`<br>`refinery.squash_merges` | `[Planned]` / `[Research]` | [GO_SPECIFICATION.md](GO_SPECIFICATION.md#24-byzantine-quorum-consensus-arbiter) |
+| **Cognitive Memory Store** | Memory Store | `internal/memory`<br>`internal/notify` | `memory.db_path`<br>`memory.conventions_dir`<br>`memory.thompson_sampling`<br>`notifications.*` | `[Planned]` / `[Research]` | [GO_SPECIFICATION.md](GO_SPECIFICATION.md#25-tree-sitter-pagerank-repo-map-engine) |
+| **Workspace Sandboxing** | Sandbox | `internal/sandbox` | `sandbox.tier`<br>`sandbox.allow_network` | `[Planned]` | [GO_SPECIFICATION.md](GO_SPECIFICATION.md#1-standard-project-layout) |
+| **Mission Control TUI** | TUI | `internal/tui`<br>`internal/tui/views` | `version` | `[Planned]` | [GO_SPECIFICATION.md](GO_SPECIFICATION.md#1-standard-project-layout) |

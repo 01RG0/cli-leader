@@ -1,6 +1,6 @@
 # Audit: docs/ECOSYSTEM_INNOVATIONS.md vs CONTRACT.md
 
-This document records the audit findings for `docs/ECOSYSTEM_INNOVATIONS.md` evaluated strictly against [`docs/_review/CONTRACT.md`](file:///home/rootuser/wt-ecosystem-innovations/docs/_review/CONTRACT.md).
+This document records the audit findings for `docs/ECOSYSTEM_INNOVATIONS.md` evaluated strictly against [`docs/_review/CONTRACT.md`](CONTRACT.md).
 
 ---
 

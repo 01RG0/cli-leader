@@ -1,6 +1,6 @@
 # Open Questions & Verification Items: ECOSYSTEM_INNOVATIONS.md
 
-This document tracks all unverified facts, parameters, library bindings, and external schema specifications identified during the overhaul of `docs/ECOSYSTEM_INNOVATIONS.md` per [`docs/_review/CONTRACT.md`](file:///home/rootuser/wt-ecosystem-innovations/docs/_review/CONTRACT.md) Section 4 Rule 3 ("Never Invent Facts").
+This document tracks all unverified facts, parameters, library bindings, and external schema specifications identified during the overhaul of `docs/ECOSYSTEM_INNOVATIONS.md` per [`docs/_review/CONTRACT.md`](CONTRACT.md) Section 4 Rule 3 ("Never Invent Facts").
 
 Every item listed here corresponds to a `TODO(verify): <what>` tag inserted into the canonical document text.
 
