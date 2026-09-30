@@ -5,8 +5,12 @@
 
 # Binaries & build artifacts
 /cli-leader
+/docscore
 bin/
 dist/
+
+# Caches
+.cache/
 
 # Worktrees and ephemeral scratch directories
 .brain/worktrees/
