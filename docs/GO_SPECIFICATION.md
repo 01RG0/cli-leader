@@ -2,7 +2,7 @@
 
 ## 1. Standard Project Layout
 
-`cli-leader` adheres to the standard Go project structure:
+`cli-leader` is organized as a modular, pure-Go application adhering to standard Go project conventions:
 
 ```
 cli-leader/
@@ -14,12 +14,16 @@ cli-leader/
 │   │   └── config.go               # YAML/ENV configuration loader
 │   ├── gateway/
 │   │   ├── proxy.go                # HTTP reverse proxy server (:8082)
-│   │   ├── translator.go           # Anthropic -> OpenAI / Gemini / Ollama translation
-│   │   ├── stream.go               # SSE stream adapter & chunk encoder
+│   │   ├── stream.go               # SSE stream state machine (OpenAI -> Anthropic)
+│   │   ├── tokens.go               # /v1/messages/count_tokens handler (tiktoken-go)
+│   │   ├── tools.go                # Tool schema conversion & name sanitization
 │   │   └── providers/
-│   │       ├── openai.go           # OpenAI payload adapter
-│   │       ├── gemini.go           # Gemini payload adapter
-│   │       └── ollama.go           # Ollama / DeepSeek adapter
+│   │       ├── openai.go           # OpenAI payload adapter & reasoning mapper
+│   │       ├── gemini.go           # Gemini OpenAI-compatible / REST adapter
+│   │       └── ollama.go           # Ollama / local model adapter
+│   ├── state/
+│   │   ├── dual_ledger.go          # TaskLedger (goals) & ProgressLedger (steps)
+│   │   └── stall_detector.go       # Cryptographic state hashing & loop breaker
 │   ├── mcp/
 │   │   ├── server.go               # Model Context Protocol stdio/SSE server
 │   │   ├── tools.go                # Tool registration & schemas
@@ -27,32 +31,45 @@ cli-leader/
 │   ├── worker/
 │   │   ├── manager.go              # Worker lifecycle, pooling & supervisor
 │   │   ├── process.go              # Subprocess execution, PTY & timeouts
-│   │   ├── worktree.go             # Git worktree sandbox management
+│   │   ├── ringbuffer.go           # High-throughput circular log buffer
+│   │   ├── auto_reply.go           # Sliding-window regex prompt auto-responder
+│   │   ├── worktree.go             # Native Git worktree wrapper & mutex locks
 │   │   └── adapters/
 │   │       ├── adapter.go          # CLI Adapter interface
 │   │       ├── aider.go            # Aider CLI integration
 │   │       ├── gemini_cli.go       # Gemini CLI integration
 │   │       ├── ollama_cli.go       # Ollama / local CLI integration
 │   │       └── generic.go          # Custom generic CLI adapter
+│   ├── speculative/
+│   │   └── branch_racing.go        # Parallel candidate dispatch & diff evaluation
+│   ├── refinery/
+│   │   └── queue.go                # Serialized Bors-style merge queue & test runner
+│   ├── verification/
+│   │   ├── f2p.go                  # Fail-to-Pass automated TDD engine
+│   │   └── red_blue.go             # Adversarial breaker audit loop
+│   ├── sandbox/
+│   │   ├── bwrap.go                # Bubblewrap unprivileged namespace wrapper
+│   │   └── landlock.go             # Linux Landlock LSM re-exec trampoline
 │   ├── memory/
 │   │   ├── store.go                # SQLite episodic and semantic storage
-│   │   ├── matrix.go               # Dynamic CLI capability rating & routing
-│   │   ├── rules.go                # Rule extractor & markdown parser
+│   │   ├── vector.go               # Pure-Go chromem-go vector search engine
+│   │   ├── reflexion.go            # Verbal reinforcement rule extractor
+│   │   ├── rules.go                # Dynamic .cursor/rules/*.mdc glob matcher
+│   │   ├── matrix.go               # Thompson Sampling Bayesian capability routing
 │   │   └── schema.sql              # Database DDL
-│   ├── review/
-│   │   └── red_blue.go             # Red Team / Blue Team adversarial arbitration
 │   └── tui/
 │       ├── app.go                  # Bubble Tea main application model
+│       ├── batcher.go              # 30Hz ticker batcher for smooth 60 FPS logs
 │       ├── views/
-│       │   ├── dashboard.go        # Swarm status & task graph
-│       │   ├── logs.go             # Real-time worker log streaming
+│       │   ├── dashboard.go        # Swarm status & pipeline graph
+│       │   ├── logs.go             # Multi-pane real-time log viewer
 │       │   └── memory_view.go      # Knowledge & rule explorer
 │       └── styles/
-│           └── theme.go            # Lipgloss styling, colors, and layout
+│           └── theme.go            # Lipgloss styling, borders, and colors
 ├── pkg/
 │   └── protocol/
-│       ├── anthropic.go            # Anthropic API message structs
-│       ├── openai.go               # OpenAI API message structs
+│       ├── anthropic.go            # Anthropic API message structs & SSE types
+│       ├── openai.go               # OpenAI API message structs & chunks
 │       └── gemini.go               # Gemini API message structs
 ├── docs/                           # Architecture, Specs, Roadmap
 ├── go.mod
@@ -64,111 +81,179 @@ cli-leader/
 
 ## 2. Core Go Interfaces & Structs
 
-### 2.1 Worker Adapter Interface
+### 2.1 Dual-Ledger State Machine
+```go
+package state
+
+import (
+	"context"
+	"time"
+)
+
+type StepStatus string
+
+const (
+	StepPending   StepStatus = "pending"
+	StepRunning   StepStatus = "running"
+	StepVerifying StepStatus = "verifying"
+	StepCompleted StepStatus = "completed"
+	StepFailed    StepStatus = "failed"
+	StepAborted   StepStatus = "aborted"
+)
+
+// TaskLedger stores the high-level immutable user goal and constraints
+type TaskLedger struct {
+	ID                 string    `json:"id"`
+	Goal               string    `json:"goal"`
+	AcceptanceCriteria []string  `json:"acceptance_criteria"`
+	BaseBranch         string    `json:"base_branch"`
+	CreatedAt          time.Time `json:"created_at"`
+}
+
+// ProgressLedger tracks dynamic execution steps and breaks thrashing loops
+type ProgressStep struct {
+	ID             string     `json:"id"`
+	TaskID         string     `json:"task_id"`
+	StepIndex      int        `json:"step_index"`
+	AssignedWorker string     `json:"assigned_worker"`
+	ActionPrompt   string     `json:"action_prompt"`
+	WorktreePath   string     `json:"worktree_path"`
+	Branch         string     `json:"branch"`
+	Status         StepStatus `json:"status"`
+	StateHash      string     `json:"state_hash"` // SHA256(tool_name + args + diff)
+	RetryCount     int        `json:"retry_count"`
+	StallCount     int        `json:"stall_count"`
+	CreatedAt      time.Time  `json:"created_at"`
+	CompletedAt    *time.Time `json:"completed_at,omitempty"`
+}
+
+type LedgerEngine interface {
+	CreateTask(ctx context.Context, task TaskLedger) error
+	RecordStep(ctx context.Context, step ProgressStep) error
+	CheckLoopOrStall(ctx context.Context, taskID, stateHash string) (isLoop bool, stallCount int, err error)
+	MarkStepComplete(ctx context.Context, stepID string) error
+}
+```
+
+### 2.2 Streaming SSE State Machine
+```go
+package gateway
+
+import (
+	"net/http"
+)
+
+type BlockType int
+
+const (
+	BlockNone BlockType = iota
+	BlockThinking
+	BlockText
+	BlockToolUse
+)
+
+// SSEStreamTranslator converts upstream OpenAI chunk deltas into framed Anthropic SSE envelopes
+type SSEStreamTranslator struct {
+	w                  http.ResponseWriter
+	flusher            http.Flusher
+	currentBlockIndex  int
+	currentBlockType   BlockType
+	openAIToBlockIndex map[int]int // Maps OpenAI tool_call index -> Anthropic block index
+	messageID          string
+	model              string
+}
+
+func NewSSEStreamTranslator(w http.ResponseWriter, flusher http.Flusher, msgID, model string) *SSEStreamTranslator {
+	return &SSEStreamTranslator{
+		w:                  w,
+		flusher:            flusher,
+		openAIToBlockIndex: make(map[int]int),
+		messageID:          msgID,
+		model:              model,
+	}
+}
+
+func (t *SSEStreamTranslator) HandleOpenAIChunk(chunk *OpenAIStreamChunk) error {
+	// Translates reasoning_content -> thinking blocks, content -> text blocks,
+	// and tool_calls -> input_json_delta blocks. Flushes immediately.
+	return nil
+}
+```
+
+### 2.3 Thompson Sampling Capability Matrix
+```go
+package memory
+
+import (
+	"context"
+	"math/rand"
+	"time"
+)
+
+type WorkerScore struct {
+	CLIName     string  `json:"cli_name"`
+	Category    string  `json:"category"`
+	AlphaScore  float64 `json:"alpha_score"` // 1 + successes (Beta distribution)
+	BetaScore   float64 `json:"beta_score"`  // 1 + failures (Beta distribution)
+	AvgDuration time.Duration `json:"avg_duration"`
+	TotalCost   float64 `json:"total_cost_usd"`
+}
+
+type CapabilityRouter interface {
+	// SampleWorker draws from Beta(alpha, beta) for each candidate and picks the highest sample
+	SampleWorker(ctx context.Context, category string, candidates []string) (string, error)
+	RecordSuccess(ctx context.Context, cliName, category string, duration time.Duration, cost float64) error
+	RecordFailure(ctx context.Context, cliName, category string) error
+}
+```
+
+### 2.4 Decoupled High-Throughput TUI Ring Buffer
 ```go
 package worker
 
 import (
-	"context"
-	"io"
+	"sync"
 )
 
-type CLIAdapter interface {
-	// Name returns the identifier of the CLI tool (e.g. "aider", "gemini-cli")
-	Name() string
-	
-	// PrepareCommand constructs the exec command with appropriate flags and environment
-	PrepareCommand(ctx context.Context, task Task, worktreeDir string) (*exec.Cmd, error)
-	
-	// HandlePrompts monitors stdout for interactive confirmation questions and handles auto-reply
-	HandlePrompts(in io.Writer, out io.Reader) error
-	
-	// ParseResult parses stdout/stderr and git diff into a structured TaskResult
-	ParseResult(output []byte, diff string) (*TaskResult, error)
-}
-```
-
-### 2.2 Task & Worker Manager
-```go
-type TaskStatus string
-
-const (
-	StatusQueued    TaskStatus = "queued"
-	StatusRunning   TaskStatus = "running"
-	StatusReviewing TaskStatus = "reviewing"
-	StatusCompleted TaskStatus = "completed"
-	StatusFailed    TaskStatus = "failed"
-	StatusAborted   TaskStatus = "aborted"
-)
-
-type Task struct {
-	ID           string            `json:"id"`
-	CLIName      string            `json:"cli_name"`
-	Prompt       string            `json:"prompt"`
-	TargetFiles  []string          `json:"target_files"`
-	WorktreePath string            `json:"worktree_path"`
-	Branch       string            `json:"branch"`
-	Env          map[string]string `json:"env"`
-	Status       TaskStatus        `json:"status"`
-	CreatedAt    time.Time         `json:"created_at"`
+type RingLogBuffer struct {
+	mu       sync.Mutex
+	lines    []string
+	maxLines int
+	dirty    bool
 }
 
-type TaskResult struct {
-	TaskID    string        `json:"task_id"`
-	ExitCode  int           `json:"exit_code"`
-	Stdout    string        `json:"stdout"`
-	Stderr    string        `json:"stderr"`
-	GitDiff   string        `json:"git_diff"`
-	Duration  time.Duration `json:"duration"`
-	Tokens    int64         `json:"tokens_used"`
-	Error     error         `json:"error,omitempty"`
-}
-```
-
-### 2.3 Cognitive Memory Store Interface
-```go
-package memory
-
-type MemoryStore interface {
-	// Episodic
-	RecordTaskRun(ctx context.Context, task Task, result TaskResult) error
-	GetTaskHistory(ctx context.Context, limit int) ([]TaskResult, error)
-	
-	// Semantic / Rules
-	AddLearnedRule(ctx context.Context, rule Rule) error
-	FindRelevantRules(ctx context.Context, contextQuery string) ([]Rule, error)
-	
-	// Matrix & Routing
-	UpdateCLIScore(ctx context.Context, cliName, category string, success bool, latency time.Duration) error
-	RecommendCLI(ctx context.Context, category string) (string, error)
+func NewRingLogBuffer(maxLines int) *RingLogBuffer {
+	return &RingLogBuffer{
+		lines:    make([]string, 0, maxLines),
+		maxLines: maxLines,
+	}
 }
 
-type Rule struct {
-	ID          string    `json:"id"`
-	Category    string    `json:"category"`
-	Directive   string    `json:"directive"`
-	Source      string    `json:"source"` // e.g. "worker:aider:error_fix"
-	Confidence  float64   `json:"confidence"`
-	CreatedAt   time.Time `json:"created_at"`
+func (b *RingLogBuffer) Append(line string) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if len(b.lines) >= b.maxLines {
+		b.lines = b.lines[1:]
+	}
+	b.lines = append(b.lines, line)
+	b.dirty = true
+}
+
+func (b *RingLogBuffer) DrainNew(fromIndex int) ([]string, int, bool) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if !b.dirty || fromIndex >= len(b.lines) {
+		return nil, len(b.lines), false
+	}
+	newLines := make([]string, len(b.lines)-fromIndex)
+	copy(newLines, b.lines[fromIndex:])
+	return newLines, len(b.lines), true
 }
 ```
 
 ---
 
-## 3. Concurrency & Streaming Architecture
-
-1. **Worker Process Isolation**:
-   - Each worker runs in its own goroutine with an attached `creack/pty.Pty`.
-   - Output is multiplexed to a thread-safe ring buffer (`ring.Buffer`) for TUI viewing and to an append-only log file.
-2. **Context Cancellation & Safety**:
-   - When the user cancels a task or Claude CLI calls `abort_worker`, the worker's parent context is canceled.
-   - The supervisor issues `SIGTERM` followed by a grace period (3 seconds), escalating to `SIGKILL` on the entire process group.
-3. **Event Bus**:
-   - A lightweight in-memory Go channel bus (`chan Event`) broadcasts worker state transitions to the TUI and the MCP notification system.
-
----
-
-## 4. Configuration Schema (`cli-leader.yaml`)
+## 3. Configuration Schema (`cli-leader.yaml`)
 
 ```yaml
 version: "1.0"
@@ -176,7 +261,7 @@ version: "1.0"
 # Multi-Provider Gateway Settings
 gateway:
   listen_addr: "127.0.0.1:8082"
-  default_provider: "openai" # Options: anthropic, openai, gemini, ollama
+  default_provider: "openai"
   providers:
     openai:
       base_url: "https://api.openai.com/v1"
@@ -185,7 +270,7 @@ gateway:
         "claude-3-7-sonnet-20250219": "o3-mini"
         "claude-3-5-sonnet-20241022": "gpt-4o"
     gemini:
-      base_url: "https://generativelanguage.googleapis.com/v1beta"
+      base_url: "https://generativelanguage.googleapis.com/v1beta/openai"
       api_key_env: "GEMINI_API_KEY"
       model_mapping:
         "claude-3-7-sonnet-20250219": "gemini-2.5-pro"
@@ -194,7 +279,7 @@ gateway:
       model_mapping:
         "claude-3-5-sonnet-20241022": "deepseek-r1:32b"
 
-# Worker Definitions
+# Worker Swarm Topology
 workers:
   aider:
     binary: "aider"
@@ -207,29 +292,41 @@ workers:
     binary: "ollama"
     categories: ["test_generation", "boilerplate"]
 
-# Learning & Memory Bank Settings
+# Speculative Execution & Merge Refinery
+speculative:
+  enabled: true
+  max_parallel_candidates: 2
+
+refinery:
+  test_command: "go test -v ./..."
+  squash_merges: true
+
+# Cognitive Memory & Reflexion
 memory:
   db_path: ".brain/memory.db"
-  rules_file: ".brain/conventions.md"
-  auto_reflect: true
+  conventions_dir: ".brain/conventions"
+  max_injected_rule_tokens: 800
+  thompson_sampling: true
 
-# Verification & Peer Review
-review:
-  enable_red_team: true
-  adversary_cli: "aider"
-  auto_rollback_on_test_failure: true
+# Verification & Sandboxing
+sandbox:
+  tier: "auto" # options: bwrap, landlock, none
+  allow_network: false
 ```
 
 ---
 
-## 5. Key Go Dependencies
+## 4. Key Go Dependencies
 
 | Package | Purpose |
 |---|---|
+| `modernc.org/sqlite` | Pure Go embedded SQLite engine (zero CGO required) |
+| `github.com/philippgille/chromem-go` | Pure Go in-memory vector store with persistence (<2ms search) |
 | `github.com/charmbracelet/bubbletea` | Elm-architecture Terminal User Interface framework |
-| `github.com/charmbracelet/lipgloss` | Terminal styling, borders, and color layouts |
+| `github.com/charmbracelet/lipgloss` | Terminal styling, borders, and layouts |
 | `github.com/creack/pty` | PTY allocation for interactive CLI worker wrapping |
-| `modernc.org/sqlite` | Pure Go embedded SQLite engine (no CGO required) |
-| `github.com/spf13/cobra` | CLI command routing (`cli-leader start`, `init`, `status`) |
-| `github.com/spf13/viper` | YAML and environment variable configuration management |
-| `gopkg.in/yaml.v3` | High-fidelity YAML parsing |
+| `github.com/pkoukk/tiktoken-go` | Pure Go BPE tokenization for `/v1/messages/count_tokens` |
+| `github.com/tidwall/gjson` & `sjson` | Zero-allocation JSON manipulation for low-latency proxying |
+| `github.com/bmatcuk/doublestar/v4` | High-performance glob matching for `.cursor/rules/*.mdc` rules |
+| `github.com/landlock-lsm/go-landlock` | Unprivileged Linux Landlock LSM sandboxing |
+| `github.com/spf13/cobra` | CLI command routing (`cli-leader start`, `status`) |
